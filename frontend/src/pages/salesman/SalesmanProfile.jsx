@@ -51,23 +51,28 @@ export default function SalesmanProfile() {
 
       <div className="space-y-3">
         {/* Install App */}
-        {!isInstalled && (canInstall || isIOS) && (
-          <button
-            onClick={isIOS ? () => setShowIOS(true) : install}
-            className="card w-full flex items-center gap-3 hover:bg-indigo-50 transition-colors border-indigo-100"
-          >
+        {isInstalled ? (
+          <div className="card flex items-center gap-3 border border-emerald-100 bg-emerald-50/50">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+              <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div>
+              <p className="font-semibold text-sm text-emerald-700">App Installed</p>
+              <p className="text-xs text-gray-400">SalesTrack is on your home screen</p>
+            </div>
+          </div>
+        ) : (
+          <button onClick={canInstall ? install : () => setShowIOS(true)}
+            className="card w-full flex items-center gap-3 hover:bg-indigo-50 transition-colors border border-indigo-100">
             <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
+              <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
             </div>
             <div className="text-left">
-              <p className="font-semibold text-sm text-indigo-700">Download App</p>
-              <p className="text-xs text-gray-400">Install SalesTrack on your device</p>
+              <p className="font-semibold text-sm text-indigo-700">Install App</p>
+              <p className="text-xs text-gray-400">Add SalesTrack to your home screen</p>
             </div>
           </button>
         )}
-        {showIOS && <IOSInstallGuide onClose={() => setShowIOS(false)} />}
         {/* Change password */}
         <div className="card">
           <button onClick={() => setChanging(!changing)} className="w-full flex items-center justify-between">
@@ -98,6 +103,8 @@ export default function SalesmanProfile() {
           <p className="font-semibold text-sm text-rose-600">Logout</p>
         </button>
       </div>
+
+      {showIOS && <IOSInstallGuide onClose={() => setShowIOS(false)} />}
     </SalesmanLayout>
   );
 }
