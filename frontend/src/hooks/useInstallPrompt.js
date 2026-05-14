@@ -23,6 +23,7 @@ export function useInstallPrompt() {
   };
 
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone;
+  const canInstall = !!prompt;
 
-  return { canInstall: !!prompt, isInstalled, isIOS, install };
+  return { prompt, canInstall, isInstalled, isIOS, install };
 }
