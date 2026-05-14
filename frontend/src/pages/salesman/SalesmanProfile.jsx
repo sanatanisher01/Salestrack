@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useInstallPrompt } from '../../hooks/useInstallPrompt';
+import IOSInstallGuide from '../../components/IOSInstallGuide';
 
 export default function SalesmanProfile() {
   const { user, logout } = useAuthStore();
@@ -11,6 +13,8 @@ export default function SalesmanProfile() {
   const [changing, setChanging] = useState(false);
   const [form, setForm] = useState({ currentPassword: '', newPassword: '' });
   const [loading, setLoading] = useState(false);
+  const [showIOS, setShowIOS] = useState(false);
+  const { canInstall, isInstalled, isIOS, install } = useInstallPrompt();
 
   const handleLogout = async () => {
     await logout();
@@ -46,6 +50,24 @@ export default function SalesmanProfile() {
       </div>
 
       <div className="space-y-3">
+        {/* Install App */}
+        {!isInstalled && (canInstall || isIOS) && (
+          <button
+            onClick={isIOS ? () => setShowIOS(true) : install}
+            className="card w-full flex items-center gap-3 hover:bg-indigo-50 transition-colors border-indigo-100"
+          >
+            <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
+              <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-sm text-indigo-700">Download App</p>
+              <p className="text-xs text-gray-400">Install SalesTrack on your device</p>
+            </div>
+          </button>
+        )}
+        {showIOS && <IOSInstallGuide onClose={() => setShowIOS(false)} />}
         {/* Change password */}
         <div className="card">
           <button onClick={() => setChanging(!changing)} className="w-full flex items-center justify-between">
