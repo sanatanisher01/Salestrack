@@ -15,7 +15,7 @@ export const useNotificationStore = create((set, get) => ({
       } catch {}
     };
     fetch();
-    const interval = setInterval(fetch, 10000);
+    const interval = setInterval(fetch, 60000); // every 60 seconds
     set({ _interval: interval });
   },
 

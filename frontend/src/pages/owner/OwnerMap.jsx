@@ -77,14 +77,14 @@ export default function OwnerMap() {
       } catch {}
     };
     fetchLive();
-    liveInterval.current = setInterval(fetchLive, 5000);
+    liveInterval.current = setInterval(fetchLive, 15000); // every 15 seconds
     return () => clearInterval(liveInterval.current);
   }, [user.uid]);
 
   useEffect(() => {
     if (trailInterval.current) clearInterval(trailInterval.current);
     if (!selected) return;
-    trailInterval.current = setInterval(() => fetchTrail(selected), 10000);
+    trailInterval.current = setInterval(() => fetchTrail(selected), 30000); // every 30 seconds
     return () => clearInterval(trailInterval.current);
   }, [selected]);
 
