@@ -73,6 +73,15 @@ router.patch('/team/:uid/activate', async (req, res) => {
   res.json({ message: 'User activated' });
 });
 
+router.delete('/team/:uid', async (req, res) => {
+  const db = getDb();
+  const doc = await db.collection('users').doc(req.params.uid).get();
+  if (!doc.exists || doc.data().ownerId !== req.user.uid) return res.status(404).json({ error: 'Not found' });
+  if (doc.data().dutyStatus === 'on') return res.status(400).json({ error: 'Cannot delete a salesman who is on duty' });
+  await doc.ref.delete();
+  res.json({ message: 'User deleted' });
+});
+
 router.get('/duty-sessions', async (req, res) => {
   const { salesmanId, status } = req.query;
   const db = getDb();

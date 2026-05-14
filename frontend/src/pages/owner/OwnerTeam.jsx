@@ -29,9 +29,22 @@ export default function OwnerTeam() {
     }
   };
 
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
   const toggle = async (uid, isActive) => {
     await api.patch(`/owner/team/${uid}/${isActive ? 'deactivate' : 'activate'}`);
     load();
+  };
+
+  const handleDelete = async (uid) => {
+    try {
+      await api.delete(`/owner/team/${uid}`);
+      toast.success('Member deleted');
+      setConfirmDelete(null);
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to delete');
+    }
   };
 
   const filtered = team.filter((m) => m.role === tab);
@@ -111,6 +124,12 @@ export default function OwnerTeam() {
               >
                 {m.isActive ? 'Deactivate' : 'Activate'}
               </button>
+              <button
+                onClick={() => setConfirmDelete(m)}
+                className="text-xs px-2.5 py-1 rounded-lg font-medium bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+              >
+                Delete
+              </button>
             </div>
           </div>
         ))}
@@ -122,6 +141,25 @@ export default function OwnerTeam() {
           </div>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-xl p-6">
+            <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 text-center">Delete {confirmDelete.name}?</h2>
+            <p className="text-sm text-gray-500 text-center mt-1 mb-5">This action cannot be undone. All their data will be permanently removed.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDelete(null)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={() => handleDelete(confirmDelete.uid)} className="btn-danger flex-1">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </OwnerLayout>
   );
 }
