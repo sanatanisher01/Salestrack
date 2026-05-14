@@ -12,6 +12,7 @@ import OwnerMap from './pages/owner/OwnerMap';
 import OwnerOrders from './pages/owner/OwnerOrders';
 import OwnerTeam from './pages/owner/OwnerTeam';
 import OwnerHistory from './pages/owner/OwnerHistory';
+import OwnerProfile from './pages/owner/OwnerProfile';
 import SalesmanDashboard from './pages/salesman/SalesmanDashboard';
 import SalesmanMap from './pages/salesman/SalesmanMap';
 import SalesmanOrders from './pages/salesman/SalesmanOrders';
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/owner/orders" element={<ProtectedRoute role="owner"><OwnerOrders /></ProtectedRoute>} />
         <Route path="/owner/team" element={<ProtectedRoute role="owner"><OwnerTeam /></ProtectedRoute>} />
         <Route path="/owner/history" element={<ProtectedRoute role="owner"><OwnerHistory /></ProtectedRoute>} />
+        <Route path="/owner/profile" element={<ProtectedRoute role="owner"><OwnerProfile /></ProtectedRoute>} />
 
         <Route path="/salesman" element={<ProtectedRoute role="salesman"><SalesmanDashboard /></ProtectedRoute>} />
         <Route path="/salesman/map" element={<ProtectedRoute role="salesman"><SalesmanMap /></ProtectedRoute>} />

@@ -4,7 +4,6 @@ import { useAuthStore } from '../store/authStore';
 import { useNotificationStore } from '../store/notificationStore';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import NotificationBell from '../components/NotificationBell';
-import InstallPrompt from '../components/InstallPrompt';
 
 const navLinks = [
   { to: '/owner', label: 'Dashboard', icon: (active) => (
@@ -30,6 +29,11 @@ const navLinks = [
   { to: '/owner/history', label: 'History', icon: (active) => (
     <svg className="w-5 h-5" fill={active ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 0 : 2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  )},
+  { to: '/owner/profile', label: 'Profile', icon: (active) => (
+    <svg className="w-5 h-5" fill={active ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={active ? 0 : 2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
     </svg>
   )},
 ];
@@ -80,14 +84,12 @@ export default function OwnerLayout({ children }) {
             </nav>
           </div>
           <div className="flex items-center gap-2">
-            <InstallPrompt />
             <NotificationBell />
-            <div className="flex items-center gap-2 pl-2 border-l border-gray-100">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+            <Link to="/owner/profile" className="flex items-center gap-2 pl-2 border-l border-gray-100">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm hover:opacity-80 transition-opacity">
                 {user?.name?.[0]?.toUpperCase()}
               </div>
-              <button onClick={handleLogout} className="hidden sm:block text-xs text-gray-400 hover:text-rose-500 transition-colors font-medium">Logout</button>
-            </div>
+            </Link>
           </div>
         </div>
       </header>
