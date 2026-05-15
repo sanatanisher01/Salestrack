@@ -34,7 +34,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 
   await doc.ref.update({ failedLoginAttempts: 0, lockedUntil: null });
 
-  const token = generateToken({ uid: user.uid, role: user.role });
+  const token = generateToken({ uid: user.uid, role: user.role, name: user.name, email: user.email, ownerId: user.ownerId || null, isActive: user.isActive, phone: user.phone || '' });
   const { passwordHash, ...safeUser } = user;
   res.json({ token, user: safeUser });
 });
@@ -45,7 +45,7 @@ router.post('/logout', async (req, res) => {
 
 // Refresh token — issues a new token if current one is still valid
 router.post('/refresh', require('../middleware/auth').authenticate, async (req, res) => {
-  const token = generateToken({ uid: req.user.uid, role: req.user.role });
+  const token = generateToken({ uid: req.user.uid, role: req.user.role, name: req.user.name, email: req.user.email, ownerId: req.user.ownerId || null, isActive: req.user.isActive, phone: req.user.phone || '' });
   const { passwordHash, ...safeUser } = req.user;
   res.json({ token, user: safeUser });
 });
