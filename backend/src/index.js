@@ -6,7 +6,6 @@ const morgan = require('morgan');
 
 const { initFirebase } = require('./config/firebase');
 const { initWebPush } = require('./utils/webpush');
-const { startStopEventDetector } = require('./jobs/stopEventDetector');
 
 initFirebase();
 initWebPush();
@@ -16,16 +15,7 @@ const app = express();
 app.use(helmet());
 app.set('trust proxy', 1);
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowed = [
-      process.env.FRONTEND_URL,
-      'http://localhost:5173',
-      'http://localhost:4173',
-    ].filter(Boolean);
-    // Allow requests with no origin (mobile apps, Postman) or matching origin
-    if (!origin || allowed.includes(origin)) return callback(null, true);
-    callback(null, true); // allow all origins for now
-  },
+  origin: (origin, callback) => callback(null, true),
   credentials: true,
 }));
 app.use(morgan('combined'));
@@ -46,8 +36,14 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  startStopEventDetector();
-});
+// Local dev
+if (require.main === module) {
+  const { startStopEventDetector } = require('./jobs/stopEventDetector');
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    startStopEventDetector();
+  });
+}
+
+module.exports = app;
