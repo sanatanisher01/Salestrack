@@ -13,34 +13,14 @@ function timeAgo(val) {
 
 function getNotifStyle(title = '', type = '') {
   if (title.includes('confirmed') || title.includes('Confirmed'))
-    return { bg: 'bg-blue-100', text: 'text-blue-600', icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    )};
+    return { bg: 'bg-blue-50', img: '/notif-order-confirm.png' };
   if (title.includes('delivered') || title.includes('Delivered'))
-    return { bg: 'bg-emerald-100', text: 'text-emerald-600', icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-      </svg>
-    )};
+    return { bg: 'bg-emerald-50', img: '/notif-order-confirm.png' };
   if (title.includes('cancelled') || title.includes('Cancelled'))
-    return { bg: 'bg-rose-100', text: 'text-rose-600', icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    )};
+    return { bg: 'bg-rose-50', img: '/notif-order-cancel.png' };
   if (title.includes('Order') || type === 'new_order')
-    return { bg: 'bg-violet-100', text: 'text-violet-600', icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-      </svg>
-    )};
-  return { bg: 'bg-indigo-100', text: 'text-indigo-600', icon: (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-    </svg>
-  )};
+    return { bg: 'bg-violet-50', img: '/notif-new-order.png' };
+  return { bg: 'bg-indigo-50', img: '/notif-new-order.png' };
 }
 
 export default function SalesmanNotificationBell() {
@@ -124,8 +104,8 @@ export default function SalesmanNotificationBell() {
                 return (
                   <div key={n.id} onClick={() => !n.read && markRead(n.id)}
                     className={`flex gap-3 px-4 py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50/80 transition-colors ${!n.read ? 'bg-indigo-50/30' : ''}`}>
-                    <div className={`w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 ${!n.read ? style.bg : 'bg-gray-100'} ${!n.read ? style.text : 'text-gray-400'}`}>
-                      {style.icon}
+                    <div className={`w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 ${style.bg}`}>
+                      <img src={style.img} alt="" className="w-6 h-6 object-contain" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className={`text-sm font-semibold leading-tight ${!n.read ? 'text-gray-900' : 'text-gray-500'}`}>{n.title}</p>
