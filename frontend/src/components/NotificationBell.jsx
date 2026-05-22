@@ -11,6 +11,50 @@ function timeAgo(val) {
   } catch { return ''; }
 }
 
+function getNotifStyle(title = '', type = '') {
+  if (title.includes('Online') || title.includes('started') || type === 'duty_start')
+    return { bg: 'bg-emerald-100', text: 'text-emerald-600', icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M12 12a1 1 0 100-2 1 1 0 000 2z" />
+      </svg>
+    )};
+  if (title.includes('Offline') || title.includes('ended') || type === 'duty_stop')
+    return { bg: 'bg-gray-100', text: 'text-gray-500', icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636a9 9 0 010 12.728m-12.728 0a9 9 0 010-12.728" />
+      </svg>
+    )};
+  if (title.includes('Order') || type === 'new_order')
+    return { bg: 'bg-violet-100', text: 'text-violet-600', icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+      </svg>
+    )};
+  if (title.includes('confirmed') || title.includes('Confirmed'))
+    return { bg: 'bg-blue-100', text: 'text-blue-600', icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    )};
+  if (title.includes('delivered') || title.includes('Delivered'))
+    return { bg: 'bg-emerald-100', text: 'text-emerald-600', icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      </svg>
+    )};
+  if (title.includes('cancelled') || title.includes('Cancelled'))
+    return { bg: 'bg-rose-100', text: 'text-rose-600', icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    )};
+  return { bg: 'bg-indigo-100', text: 'text-indigo-600', icon: (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+  )};
+}
+
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const { notifications, unreadCount } = useNotificationStore();
@@ -40,15 +84,15 @@ export default function NotificationBell() {
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
-      >
-        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      <button onClick={() => setOpen(!open)}
+        className={`relative w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${open ? 'bg-indigo-50' : 'hover:bg-gray-100'}`}>
+        <svg className={`w-5 h-5 transition-colors ${unreadCount > 0 ? 'text-indigo-600' : 'text-gray-500'}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -56,44 +100,55 @@ export default function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-float border border-gray-100 overflow-hidden" style={{ zIndex: 9999 }}>
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-            <div>
-              <p className="font-bold text-gray-900 text-sm">Notifications</p>
-              {unreadCount > 0 && <p className="text-[10px] text-gray-400">{unreadCount} unread</p>}
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-indigo-600 flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 text-sm">Notifications</p>
+                {unreadCount > 0 && <p className="text-[10px] text-indigo-500 font-semibold">{unreadCount} new</p>}
+              </div>
             </div>
             {unreadCount > 0 && (
-              <button onClick={markAll} className="text-xs text-indigo-600 font-semibold hover:text-indigo-700">Mark all read</button>
+              <button onClick={markAll} className="text-xs text-indigo-600 font-semibold bg-white px-2.5 py-1 rounded-xl border border-indigo-100 hover:bg-indigo-50 transition-colors">
+                Mark all read
+              </button>
             )}
           </div>
+
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="py-10 text-center">
-                <svg className="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                <p className="text-sm text-gray-400">All caught up!</p>
+                <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-7 h-7 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </div>
+                <p className="text-sm font-semibold text-gray-500">All caught up!</p>
+                <p className="text-xs text-gray-400 mt-0.5">No new notifications</p>
               </div>
             ) : (
-              notifications.map((n) => (
-                <div
-                  key={n.id}
-                  onClick={() => !n.read && markRead(n.id)}
-                  className={`flex gap-3 px-4 py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${!n.read ? 'bg-indigo-50/50' : ''}`}
-                >
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${!n.read ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>
-                {n.title?.includes('Online') || n.title?.includes('started')
-                  ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M12 12a1 1 0 100-2 1 1 0 000 2z" /></svg>
-                  : n.title?.includes('Offline') || n.title?.includes('ended')
-                  ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636a9 9 0 010 12.728m-12.728 0a9 9 0 010-12.728M12 12a1 1 0 100-2 1 1 0 000 2z" /></svg>
-                  : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                }
-              </div>
-                  <div className="min-w-0 flex-1">
-                    <p className={`text-sm font-semibold ${!n.read ? 'text-gray-900' : 'text-gray-600'}`}>{n.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{n.body}</p>
-                    <p className="text-[10px] text-gray-400 mt-1">{timeAgo(n.createdAt)}</p>
+              notifications.map((n) => {
+                const style = getNotifStyle(n.title, n.type);
+                return (
+                  <div key={n.id} onClick={() => !n.read && markRead(n.id)}
+                    className={`flex gap-3 px-4 py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50/80 transition-colors ${!n.read ? 'bg-indigo-50/30' : ''}`}>
+                    <div className={`w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 ${!n.read ? style.bg : 'bg-gray-100'} ${!n.read ? style.text : 'text-gray-400'}`}>
+                      {style.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-sm font-semibold leading-tight ${!n.read ? 'text-gray-900' : 'text-gray-500'}`}>{n.title}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{n.body}</p>
+                      <p className="text-[10px] text-gray-400 mt-1 font-medium">{timeAgo(n.createdAt)}</p>
+                    </div>
+                    {!n.read && <div className="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0 mt-1.5" />}
                   </div>
-                  {!n.read && <div className="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0 mt-2" />}
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
