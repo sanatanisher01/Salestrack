@@ -54,26 +54,35 @@ router.post('/ping', requireRole('salesman'), async (req, res) => {
     timestamp: now,
   });
 
-  // Reverse geocode (non-blocking)
-  const address = await reverseGeocode(lat, lng);
+  // Reverse geocode (non-blocking — don't await)
+  reverseGeocode(lat, lng).then((address) => {
+    db.collection('users').doc(req.user.uid).update({
+      liveLocation: { lat, lng, timestamp: now, address: address || null },
+      updatedAt: now,
+    }).catch(() => {});
+  });
 
-  // Update live location on user doc
+  // Update live location immediately without waiting for geocode
   await db.collection('users').doc(req.user.uid).update({
-    liveLocation: { lat, lng, timestamp: now, address: address || null },
+    'liveLocation.lat': lat,
+    'liveLocation.lng': lng,
+    'liveLocation.timestamp': now,
     updatedAt: now,
   });
 
-  // Update session distance
-  const pingsSnap = await db.collection('locationPings').where('sessionId', '==', activeSessionId).get();
-  const pings = pingsSnap.docs
-    .map((d) => d.data())
-    .sort((a, b) => (a.timestamp?.toMillis?.() || 0) - (b.timestamp?.toMillis?.() || 0));
-
-  let totalDistanceKm = 0;
-  for (let i = 1; i < pings.length; i++) {
-    totalDistanceKm += haversineDistance(pings[i - 1].lat, pings[i - 1].lng, pings[i].lat, pings[i].lng) / 1000;
+  // Update session distance incrementally (only last 2 pings)
+  const lastPingsSnap = await db.collection('locationPings')
+    .where('sessionId', '==', activeSessionId)
+    .orderBy('timestamp', 'desc')
+    .limit(2)
+    .get();
+  if (lastPingsSnap.size === 2) {
+    const [p1, p2] = lastPingsSnap.docs.map(d => d.data());
+    const dist = haversineDistance(p1.lat, p1.lng, p2.lat, p2.lng) / 1000;
+    const sessionDoc = await db.collection('dutySessions').doc(activeSessionId).get();
+    const current = sessionDoc.data()?.totalDistanceKm || 0;
+    await db.collection('dutySessions').doc(activeSessionId).update({ totalDistanceKm: current + dist });
   }
-  await db.collection('dutySessions').doc(activeSessionId).update({ totalDistanceKm });
 
   res.json({ message: 'Ping recorded' });
 });

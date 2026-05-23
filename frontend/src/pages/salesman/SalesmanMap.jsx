@@ -40,48 +40,74 @@ export default function SalesmanMap() {
   const [trail, setTrail] = useState([]);
   const dutyWatchRef = useRef(null);
   const trailIntervalRef = useRef(null);
+  const trailRef = useRef([]); // local trail buffer
+  const lastPingRef = useRef(null);
+  const MIN_DISTANCE = 5; // meters — only add point if moved 5m
 
   useEffect(() => {
     api.get('/salesman/duty/status').then(({ data }) => {
       setDutyStatus(data.dutyStatus);
-      if (data.dutyStatus === 'on') startTrailPolling();
+      if (data.dutyStatus === 'on') fetchTrailFromDB(); // load existing trail on mount
     });
     if (!navigator.geolocation) return;
     const id = navigator.geolocation.watchPosition(
       ({ coords }) => {
-        setPosition([coords.latitude, coords.longitude]);
+        const pos = [coords.latitude, coords.longitude];
+        setPosition(pos);
         setAccuracy(coords.accuracy);
         setSpeed(coords.speed ? Math.round(coords.speed * 3.6) : null);
       },
       () => {},
-      { enableHighAccuracy: true, maximumAge: 2000 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
     );
     return () => { navigator.geolocation.clearWatch(id); stopTrailPolling(); };
   }, []);
 
-  const fetchTrail = async () => {
+  const fetchTrailFromDB = async () => {
     try {
       const { data } = await api.get('/location/trail');
-      setTrail(data.trail);
+      if (data.trail.length > 0) {
+        trailRef.current = data.trail;
+        setTrail([...data.trail]);
+      }
     } catch {}
   };
 
+  const fetchTrail = fetchTrailFromDB;
+
   const startTrailPolling = () => {
-    fetchTrail();
-    trailIntervalRef.current = setInterval(fetchTrail, 10000);
+    fetchTrailFromDB();
+    trailIntervalRef.current = setInterval(fetchTrailFromDB, 30000);
   };
 
   const stopTrailPolling = () => {
     if (trailIntervalRef.current) { clearInterval(trailIntervalRef.current); trailIntervalRef.current = null; }
+    trailRef.current = [];
     setTrail([]);
   };
 
   const startDutyTracking = () => {
     if (!navigator.geolocation) return;
     dutyWatchRef.current = navigator.geolocation.watchPosition(
-      ({ coords }) => api.post('/location/ping', { lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy }).catch(() => {}),
+      ({ coords }) => {
+        const newPos = [coords.latitude, coords.longitude];
+        // Check minimum distance before adding to trail
+        const last = trailRef.current[trailRef.current.length - 1];
+        if (last) {
+          const dist = Math.sqrt(
+            Math.pow((newPos[0] - last[0]) * 111000, 2) +
+            Math.pow((newPos[1] - last[1]) * 111000 * Math.cos(last[0] * Math.PI / 180), 2)
+          );
+          if (dist < MIN_DISTANCE) return; // skip if moved less than 5m
+        }
+        // Add to local trail immediately
+        trailRef.current = [...trailRef.current, newPos];
+        setTrail([...trailRef.current]);
+        // Send ping to server
+        api.post('/location/ping', { lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy }).catch(() => {});
+      },
       () => {},
-      { enableHighAccuracy: true, maximumAge: 3000 }
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
     );
   };
 
