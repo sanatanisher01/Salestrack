@@ -3,6 +3,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
+const https = require('https');
 
 const { initFirebase } = require('./config/firebase');
 const { initWebPush } = require('./utils/webpush');
@@ -41,4 +42,12 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   startStopEventDetector();
+
+  // Self-ping every 14 minutes to prevent Render free tier sleep
+  const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+  setInterval(() => {
+    https.get(`${SELF_URL}/health`, (res) => {
+      console.log(`Self-ping: ${res.statusCode}`);
+    }).on('error', () => {});
+  }, 14 * 60 * 1000);
 });
