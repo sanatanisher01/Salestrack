@@ -73,6 +73,14 @@ router.patch('/team/:uid/activate', async (req, res) => {
   res.json({ message: 'User activated' });
 });
 
+router.patch('/team/:uid/unblock', async (req, res) => {
+  const db = getDb();
+  const doc = await db.collection('users').doc(req.params.uid).get();
+  if (!doc.exists || doc.data().ownerId !== req.user.uid) return res.status(404).json({ error: 'Not found' });
+  await doc.ref.update({ lockedUntil: null, failedLoginAttempts: 0, updatedAt: new Date() });
+  res.json({ message: 'User unblocked' });
+});
+
 router.delete('/team/:uid', async (req, res) => {
   const db = getDb();
   const doc = await db.collection('users').doc(req.params.uid).get();

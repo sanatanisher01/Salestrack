@@ -49,6 +49,12 @@ router.patch('/owners/:uid/activate', async (req, res) => {
   res.json({ message: 'Owner activated' });
 });
 
+router.patch('/owners/:uid/unblock', async (req, res) => {
+  const db = getDb();
+  await db.collection('users').doc(req.params.uid).update({ lockedUntil: null, failedLoginAttempts: 0, updatedAt: new Date() });
+  res.json({ message: 'Owner unblocked' });
+});
+
 router.get('/live', async (req, res) => {
   const db = getDb();
   const snap = await db.collection('users').where('role', '==', 'salesman').get();

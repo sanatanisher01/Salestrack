@@ -47,7 +47,17 @@ export default function OwnerTeam() {
     }
   };
 
-  const filtered = team.filter((m) => m.role === tab);
+  const isLocked = (m) => m.lockedUntil && (m.lockedUntil._seconds ? new Date(m.lockedUntil._seconds * 1000) : new Date(m.lockedUntil)) > new Date();
+
+  const unblock = async (uid) => {
+    try {
+      await api.patch(`/owner/team/${uid}/unblock`);
+      toast.success('Account unblocked');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed');
+    }
+  };
 
   return (
     <OwnerLayout>
@@ -110,6 +120,9 @@ export default function OwnerTeam() {
                     {m.dutyStatus === 'on' ? 'On Duty' : 'Off Duty'}
                   </span>
                 )}
+                {isLocked(m) && (
+                  <span className="badge text-xs bg-orange-100 text-orange-700">Locked</span>
+                )}
               </div>
               <p className="text-xs text-gray-400 truncate">{m.email}</p>
               {m.phone && <p className="text-xs text-gray-400">{m.phone}</p>}
@@ -118,6 +131,12 @@ export default function OwnerTeam() {
               <span className={`badge text-xs ${m.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
                 {m.isActive ? 'Active' : 'Inactive'}
               </span>
+              {isLocked(m) && (
+                <button onClick={() => unblock(m.uid)}
+                  className="text-xs px-2.5 py-1 rounded-lg font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors">
+                  Unblock
+                </button>
+              )}
               <button
                 onClick={() => toggle(m.uid, m.isActive)}
                 className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-colors ${m.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
