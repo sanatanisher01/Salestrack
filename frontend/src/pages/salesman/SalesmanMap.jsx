@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -19,14 +19,20 @@ const selfIcon = L.divIcon({
   iconAnchor: [12, 12],
 });
 
-function MapFollow({ position }) {
+function MapController({ position, shouldFollow }) {
   const map = useMap();
-  const first = useRef(true);
+  const initialized = useRef(false);
+
   useEffect(() => {
     if (!position) return;
-    if (first.current) { map.setView(position, 16); first.current = false; }
-    else map.panTo(position, { animate: true, duration: 0.6 });
-  }, [position]);
+    if (!initialized.current) {
+      map.setView(position, 16);
+      initialized.current = true;
+    } else if (shouldFollow) {
+      map.panTo(position, { animate: true, duration: 0.5 });
+    }
+  }, [position, shouldFollow]);
+
   return null;
 }
 
@@ -38,29 +44,39 @@ export default function SalesmanMap() {
   const [loading, setLoading] = useState(false);
   const [speed, setSpeed] = useState(null);
   const [trail, setTrail] = useState([]);
+  const [followMode, setFollowMode] = useState(true); // auto-follow GPS
   const dutyWatchRef = useRef(null);
   const trailIntervalRef = useRef(null);
-  const trailRef = useRef([]); // local trail buffer
-  const lastPingRef = useRef(null);
-  const MIN_DISTANCE = 5; // meters — only add point if moved 5m
+  const trailRef = useRef([]);
+  const mapRef = useRef(null);
+  const MIN_DISTANCE = 5; // meters
 
   useEffect(() => {
     api.get('/salesman/duty/status').then(({ data }) => {
       setDutyStatus(data.dutyStatus);
-      if (data.dutyStatus === 'on') fetchTrailFromDB(); // load existing trail on mount
-    });
+      if (data.dutyStatus === 'on') {
+        fetchTrailFromDB();
+        startDutyTracking(); // Start tracking if already on duty
+        startTrailPolling();
+      }
+    }).catch(() => {});
+
+    // GPS watcher for display only (position dot on map)
     if (!navigator.geolocation) return;
     const id = navigator.geolocation.watchPosition(
       ({ coords }) => {
-        const pos = [coords.latitude, coords.longitude];
-        setPosition(pos);
+        setPosition([coords.latitude, coords.longitude]);
         setAccuracy(coords.accuracy);
         setSpeed(coords.speed ? Math.round(coords.speed * 3.6) : null);
       },
       () => {},
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
     );
-    return () => { navigator.geolocation.clearWatch(id); stopTrailPolling(); };
+    return () => {
+      navigator.geolocation.clearWatch(id);
+      stopDutyTracking();
+      stopTrailPolling();
+    };
   }, []);
 
   const fetchTrailFromDB = async () => {
@@ -73,37 +89,30 @@ export default function SalesmanMap() {
     } catch {}
   };
 
-  const fetchTrail = fetchTrailFromDB;
-
   const startTrailPolling = () => {
-    fetchTrailFromDB();
     trailIntervalRef.current = setInterval(fetchTrailFromDB, 30000);
   };
 
   const stopTrailPolling = () => {
     if (trailIntervalRef.current) { clearInterval(trailIntervalRef.current); trailIntervalRef.current = null; }
-    trailRef.current = [];
-    setTrail([]);
   };
 
   const startDutyTracking = () => {
     if (!navigator.geolocation) return;
+    if (dutyWatchRef.current != null) return; // Already tracking
     dutyWatchRef.current = navigator.geolocation.watchPosition(
       ({ coords }) => {
         const newPos = [coords.latitude, coords.longitude];
-        // Check minimum distance before adding to trail
         const last = trailRef.current[trailRef.current.length - 1];
         if (last) {
           const dist = Math.sqrt(
             Math.pow((newPos[0] - last[0]) * 111000, 2) +
             Math.pow((newPos[1] - last[1]) * 111000 * Math.cos(last[0] * Math.PI / 180), 2)
           );
-          if (dist < MIN_DISTANCE) return; // skip if moved less than 5m
+          if (dist < MIN_DISTANCE) return;
         }
-        // Add to local trail immediately
         trailRef.current = [...trailRef.current, newPos];
         setTrail([...trailRef.current]);
-        // Send ping to server
         api.post('/location/ping', { lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy }).catch(() => {});
       },
       () => {},
@@ -112,7 +121,10 @@ export default function SalesmanMap() {
   };
 
   const stopDutyTracking = () => {
-    if (dutyWatchRef.current != null) { navigator.geolocation.clearWatch(dutyWatchRef.current); dutyWatchRef.current = null; }
+    if (dutyWatchRef.current != null) {
+      navigator.geolocation.clearWatch(dutyWatchRef.current);
+      dutyWatchRef.current = null;
+    }
   };
 
   const toggleDuty = async () => {
@@ -121,6 +133,8 @@ export default function SalesmanMap() {
       if (dutyStatus === 'off') {
         await api.post('/salesman/duty/start');
         setDutyStatus('on');
+        trailRef.current = [];
+        setTrail([]);
         startDutyTracking();
         startTrailPolling();
         toast.success('Duty started!');
@@ -129,6 +143,8 @@ export default function SalesmanMap() {
         stopTrailPolling();
         await api.post('/salesman/duty/stop');
         setDutyStatus('off');
+        trailRef.current = [];
+        setTrail([]);
         toast.success('Duty ended');
       }
     } catch (err) {
@@ -137,6 +153,13 @@ export default function SalesmanMap() {
       setLoading(false);
     }
   };
+
+  const handleRecenter = useCallback(() => {
+    setFollowMode(true);
+    if (position && mapRef.current) {
+      mapRef.current.setView(position, 16, { animate: true });
+    }
+  }, [position]);
 
   return (
     <SalesmanLayout>
@@ -147,11 +170,16 @@ export default function SalesmanMap() {
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
           attributionControl={false}
+          ref={mapRef}
+          whenReady={(map) => {
+            // Disable follow when user drags
+            map.target.on('dragstart', () => setFollowMode(false));
+          }}
         >
           <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
           {position && (
             <>
-              <MapFollow position={position} />
+              <MapController position={position} shouldFollow={followMode} />
               {trail.length > 1 && (
                 <>
                   <Polyline positions={trail} pathOptions={{ color: '#4f46e5', weight: 4, opacity: 0.85 }} />
@@ -159,7 +187,7 @@ export default function SalesmanMap() {
                 </>
               )}
               <Marker position={position} icon={selfIcon} />
-              {accuracy && (
+              {accuracy && accuracy < 100 && (
                 <Circle center={position} radius={accuracy}
                   pathOptions={{ color: '#4f46e5', fillColor: '#4f46e5', fillOpacity: 0.06, weight: 1, dashArray: '4 4' }} />
               )}
@@ -174,7 +202,7 @@ export default function SalesmanMap() {
             <div className="min-w-0">
               <p className="text-sm font-bold text-gray-900 truncate">{user?.name}</p>
               <p className={`text-[10px] font-semibold ${dutyStatus === 'on' ? 'text-emerald-600' : 'text-gray-400'}`}>
-                {dutyStatus === 'on' ? 'Tracking active' : 'Off duty'}
+                {dutyStatus === 'on' ? `Tracking · ${trail.length} pts` : 'Off duty'}
               </p>
             </div>
           </div>
@@ -195,10 +223,10 @@ export default function SalesmanMap() {
           </div>
         </div>
 
-        {/* Recenter */}
+        {/* Recenter button */}
         <button
-          onClick={() => position && setPosition([...position])}
-          className="absolute bottom-24 right-3 z-[999] w-11 h-11 glass rounded-2xl shadow-float flex items-center justify-center hover:bg-white/90 active:scale-95 transition-all"
+          onClick={handleRecenter}
+          className={`absolute bottom-24 right-3 z-[999] w-11 h-11 glass rounded-2xl shadow-float flex items-center justify-center hover:bg-white/90 active:scale-95 transition-all ${!followMode ? 'ring-2 ring-indigo-400' : ''}`}
         >
           <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

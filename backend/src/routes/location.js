@@ -8,6 +8,9 @@ const { isValidLat, isValidLng } = require('../utils/validate');
 const router = express.Router();
 router.use(authenticate);
 
+// In-memory last ping cache to avoid fetching all pings for distance calc
+const lastPingCache = new Map(); // sessionId -> { lat, lng, timestamp }
+
 router.post('/ping', requireRole('salesman'), async (req, res) => {
   try {
     const { lat, lng, accuracy } = req.body;
@@ -48,23 +51,17 @@ router.post('/ping', requireRole('salesman'), async (req, res) => {
       }).catch(() => {});
     });
 
-    // Update session distance incrementally (only last 2 pings)
-    const lastPingsSnap = await db.collection('locationPings')
-      .where('sessionId', '==', activeSessionId)
-      .get();
-    const lastPings = lastPingsSnap.docs
-      .map(d => d.data())
-      .sort((a, b) => (b.timestamp?.toMillis?.() || 0) - (a.timestamp?.toMillis?.() || 0))
-      .slice(0, 2);
-    if (lastPings.length === 2) {
-      const [p1, p2] = lastPings;
-      const dist = haversineDistance(p1.lat, p1.lng, p2.lat, p2.lng) / 1000;
+    // Update session distance using in-memory cache (avoids fetching all pings)
+    const lastPing = lastPingCache.get(activeSessionId);
+    if (lastPing) {
+      const dist = haversineDistance(lastPing.lat, lastPing.lng, numLat, numLng) / 1000;
       if (dist > 0.001) { // Only update if moved more than 1 meter
         const sessionDoc = await db.collection('dutySessions').doc(activeSessionId).get();
         const current = sessionDoc.data()?.totalDistanceKm || 0;
         await db.collection('dutySessions').doc(activeSessionId).update({ totalDistanceKm: current + dist });
       }
     }
+    lastPingCache.set(activeSessionId, { lat: numLat, lng: numLng, timestamp: now });
 
     res.json({ message: 'Ping recorded' });
   } catch (err) {
@@ -103,6 +100,31 @@ router.get('/trail', requireRole('salesman'), async (req, res) => {
     res.json({ trail });
   } catch (err) {
     console.error('Get trail error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Owner can get trail for a specific salesman (by their active session)
+router.get('/trail/:salesmanId', requireRole('owner'), async (req, res) => {
+  try {
+    const db = getDb();
+    const userDoc = await db.collection('users').doc(req.params.salesmanId).get();
+    if (!userDoc.exists) return res.status(404).json({ error: 'Not found' });
+    const userData = userDoc.data();
+    // Verify this salesman belongs to the owner
+    if (userData.ownerId !== req.user.uid) return res.status(403).json({ error: 'Forbidden' });
+    const { activeSessionId } = userData;
+    if (!activeSessionId) return res.json({ trail: [] });
+    const snap = await db.collection('locationPings')
+      .where('sessionId', '==', activeSessionId)
+      .get();
+    const trail = snap.docs
+      .map((d) => d.data())
+      .sort((a, b) => (a.timestamp?.toMillis?.() || 0) - (b.timestamp?.toMillis?.() || 0))
+      .map((p) => [p.lat, p.lng]);
+    res.json({ trail });
+  } catch (err) {
+    console.error('Get salesman trail error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

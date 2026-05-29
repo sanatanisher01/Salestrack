@@ -56,14 +56,14 @@ export default function OwnerMap() {
   const liveInterval = useRef(null);
   const trailInterval = useRef(null);
 
+  // Use the direct trail endpoint (single API call per salesman)
   const fetchTrail = async (uid) => {
     try {
-      const sessionsRes = await api.get(`/owner/duty-sessions?salesmanId=${uid}&status=active`);
-      const sessions = sessionsRes.data.sessions;
-      if (!sessions.length) { setTrails((p) => ({ ...p, [uid]: [] })); return; }
-      const trailRes = await api.get(`/owner/duty-sessions/${sessions[0].id}/trail`);
-      setTrails((p) => ({ ...p, [uid]: trailRes.data.trail.map((pt) => [pt.lat, pt.lng]) }));
-    } catch {}
+      const { data } = await api.get(`/location/trail/${uid}`);
+      setTrails((p) => ({ ...p, [uid]: data.trail }));
+    } catch {
+      setTrails((p) => ({ ...p, [uid]: [] }));
+    }
   };
 
   useEffect(() => {
@@ -73,18 +73,24 @@ export default function OwnerMap() {
         const live = data.live.filter((s) => s.liveLocation?.lat && s.liveLocation?.lng);
         setSalesmen(live);
         setPanel((prev) => prev ? (live.find((s) => s.uid === prev.uid) || prev) : null);
-        live.forEach((s) => fetchTrail(s.uid));
+        // Only fetch trails for selected salesman or all if few
+        if (live.length <= 5) {
+          live.forEach((s) => fetchTrail(s.uid));
+        } else if (selected) {
+          fetchTrail(selected);
+        }
       } catch {}
     };
     fetchLive();
-    liveInterval.current = setInterval(fetchLive, 10000); // every 10 seconds
+    liveInterval.current = setInterval(fetchLive, 10000);
     return () => clearInterval(liveInterval.current);
-  }, [user.uid]);
+  }, [user.uid, selected]);
 
   useEffect(() => {
     if (trailInterval.current) clearInterval(trailInterval.current);
     if (!selected) return;
-    trailInterval.current = setInterval(() => fetchTrail(selected), 15000); // every 15 seconds
+    fetchTrail(selected);
+    trailInterval.current = setInterval(() => fetchTrail(selected), 15000);
     return () => clearInterval(trailInterval.current);
   }, [selected]);
 
@@ -99,7 +105,6 @@ export default function OwnerMap() {
 
   return (
     <OwnerLayout>
-      {/* Full-screen map container */}
       <div className="relative rounded-3xl overflow-hidden shadow-float" style={{ height: 'calc(100vh - 120px)' }}>
         <MapContainer
           center={[20.5937, 78.9629]}
@@ -143,7 +148,6 @@ export default function OwnerMap() {
               </p>
             </div>
           </div>
-          {/* Team list toggle */}
           <button
             onClick={() => setShowList((v) => !v)}
             className="glass rounded-2xl w-11 h-11 shadow-float flex items-center justify-center hover:bg-white/90 active:scale-95 transition-all relative"
