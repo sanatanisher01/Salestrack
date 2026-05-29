@@ -129,9 +129,11 @@ export default function OwnerMap() {
     const salesman = salesmen.find((s) => s.uid === selected);
     if (!salesman?.activeSessionId) return;
 
+    // Query by sessionId AND ownerId so Firestore rules allow access
     const q = query(
       collection(db, 'locationPings'),
-      where('sessionId', '==', salesman.activeSessionId)
+      where('sessionId', '==', salesman.activeSessionId),
+      where('ownerId', '==', user.uid)
     );
 
     const unsub = onSnapshot(q, (snap) => {
