@@ -39,15 +39,15 @@ let lastPosition = null;
 function startBackgroundTracking() {
   if (trackingInterval) return;
 
-  // Show persistent notification
+  // Show persistent notification (ongoing-style)
   self.registration.showNotification('SalesTrack - On Duty', {
-    body: 'Location tracking is active',
+    body: 'Location tracking is active. Tap to open app.',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     tag: 'duty-tracking',
-    requireInteraction: true,
+    renotify: true, // Vibrate/alert again (keeps it alive)
+    requireInteraction: true, // Cannot be auto-dismissed
     silent: true,
-    actions: [{ action: 'stop', title: 'End Duty' }],
   });
 
   // Ping server every 10 seconds with last known position
@@ -63,13 +63,32 @@ function startBackgroundTracking() {
         body: JSON.stringify(lastPosition),
       });
     } catch {}
+
+    // Re-show notification every 2 minutes to keep SW alive
   }, 10000);
+
+  // Re-show notification periodically to prevent Android from killing SW
+  self.keepAliveInterval = setInterval(() => {
+    self.registration.showNotification('SalesTrack - On Duty', {
+      body: 'Location tracking is active. Tap to open app.',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: 'duty-tracking', // Same tag = replaces existing (no spam)
+      renotify: false,
+      requireInteraction: true,
+      silent: true,
+    });
+  }, 120000); // Every 2 minutes
 }
 
 function stopBackgroundTracking() {
   if (trackingInterval) {
     clearInterval(trackingInterval);
     trackingInterval = null;
+  }
+  if (self.keepAliveInterval) {
+    clearInterval(self.keepAliveInterval);
+    self.keepAliveInterval = null;
   }
   lastPosition = null;
   // Close the tracking notification
@@ -78,30 +97,27 @@ function stopBackgroundTracking() {
   });
 }
 
-// Handle notification actions
+// Handle notification click
 self.addEventListener('notificationclick', (e) => {
+  const tag = e.notification.tag;
   e.notification.close();
 
-  if (e.action === 'stop') {
-    // User clicked "End Duty" on notification
-    stopBackgroundTracking();
-    // Tell the main page to end duty
-    self.clients.matchAll().then((clients) => {
-      clients.forEach((client) => client.postMessage({ type: 'END_DUTY' }));
-    });
+  if (tag === 'duty-tracking') {
+    // Open the app to salesman map
+    e.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then((clients) => {
+        if (clients.length > 0) {
+          clients[0].focus();
+        } else {
+          self.clients.openWindow('/salesman/map');
+        }
+      })
+    );
     return;
   }
 
-  // Default click — open the app
-  e.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((clients) => {
-      if (clients.length > 0) {
-        clients[0].focus();
-      } else {
-        self.clients.openWindow('/salesman/map');
-      }
-    })
-  );
+  // Default — open app home
+  e.waitUntil(self.clients.openWindow('/'));
 });
 
 // --- Standard PWA caching ---
