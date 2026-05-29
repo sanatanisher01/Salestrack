@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { useAuthStore } from '../../store/authStore';
 import OwnerLayout from '../../layouts/OwnerLayout';
 import { db } from '../../lib/firebase';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#f97316'];
 
@@ -47,13 +47,45 @@ function MapFit({ live }) {
   return null;
 }
 
+// Zoom to salesman when selected
+function ZoomToSalesman({ salesman, trail }) {
+  const map = useMap();
+  const lastSelectedRef = useRef(null);
+
+  useEffect(() => {
+    if (!salesman) return;
+    if (lastSelectedRef.current === salesman.uid) return; // Don't re-zoom same salesman
+    lastSelectedRef.current = salesman.uid;
+
+    if (trail && trail.length > 1) {
+      // Fit the trail bounds
+      const bounds = L.latLngBounds(trail);
+      map.fitBounds(bounds, { padding: [80, 80], maxZoom: 17 });
+    } else {
+      // Zoom to salesman position
+      map.setView([salesman.lat, salesman.lng], 16, { animate: true });
+    }
+  }, [salesman?.uid, trail?.length > 1]);
+
+  return null;
+}
+
 export default function OwnerMap() {
   const { user, firebaseReady } = useAuthStore();
-  const [salesmen, setSalesmen] = useState([]); // { uid, name, email, phone, lat, lng, address }
-  const [trails, setTrails] = useState({}); // uid -> [[lat,lng], ...]
-  const [selected, setSelected] = useState(null);
+  const [salesmen, setSalesmen] = useState([]);
+  const [trails, setTrails] = useState({});
+  // Persist selected salesman across refreshes
+  const [selected, setSelected] = useState(() => sessionStorage.getItem('ownermap_selected') || null);
   const [panel, setPanel] = useState(null);
   const [showList, setShowList] = useState(false);
+
+  // Restore panel from salesmen when they load
+  useEffect(() => {
+    if (selected && salesmen.length > 0 && !panel) {
+      const s = salesmen.find((sm) => sm.uid === selected);
+      if (s) setPanel(s);
+    }
+  }, [salesmen, selected]);
 
   // Real-time listener for salesman positions
   useEffect(() => {
@@ -119,14 +151,12 @@ export default function OwnerMap() {
     return () => unsub();
   }, [firebaseReady, selected, salesmen]);
 
-  // For non-selected salesmen, extend trail with their live position
   const getTrailWithLive = (uid) => {
     const trail = trails[uid] || [];
     const salesman = salesmen.find((s) => s.uid === uid);
     if (!salesman) return trail;
     const lastPoint = trail[trail.length - 1];
     const livePoint = [salesman.lat, salesman.lng];
-    // Add live position if it's different from last trail point
     if (lastPoint && (lastPoint[0] !== livePoint[0] || lastPoint[1] !== livePoint[1])) {
       return [...trail, livePoint];
     }
@@ -137,12 +167,18 @@ export default function OwnerMap() {
     setSelected(s.uid);
     setPanel(s);
     setShowList(false);
+    sessionStorage.setItem('ownermap_selected', s.uid);
   };
 
-  const clearSelection = () => { setSelected(null); setPanel(null); };
+  const clearSelection = () => {
+    setSelected(null);
+    setPanel(null);
+    sessionStorage.removeItem('ownermap_selected');
+  };
 
-  // Prepare live data for MapFit
   const liveForFit = salesmen.map((s) => ({ lat: s.lat, lng: s.lng }));
+  const selectedSalesman = selected ? salesmen.find((s) => s.uid === selected) : null;
+  const selectedTrail = selected ? getTrailWithLive(selected) : [];
 
   return (
     <OwnerLayout>
@@ -156,6 +192,7 @@ export default function OwnerMap() {
         >
           <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
           <MapFit live={liveForFit} />
+          <ZoomToSalesman salesman={selectedSalesman} trail={selectedTrail} />
 
           {salesmen.map((s, i) => {
             const color = COLORS[i % COLORS.length];
