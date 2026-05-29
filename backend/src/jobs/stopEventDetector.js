@@ -21,15 +21,15 @@ async function detectStops() {
       const cutoff = new Date(Date.now() - 10 * 60 * 1000);
       const stopCutoff = new Date(Date.now() - STOP_MINUTES * 60 * 1000);
 
-      // Only fetch recent pings using orderBy and limit
+      // Only fetch recent pings
       const pingsSnap = await db.collection('locationPings')
         .where('sessionId', '==', sessionDoc.id)
-        .where('timestamp', '>=', cutoff)
-        .orderBy('timestamp', 'asc')
-        .limit(100)
         .get();
 
-      const recentPings = pingsSnap.docs.map((d) => d.data());
+      const recentPings = pingsSnap.docs
+        .map((d) => d.data())
+        .filter((p) => p.timestamp?.toDate?.() >= cutoff)
+        .sort((a, b) => (a.timestamp?.toMillis?.() || 0) - (b.timestamp?.toMillis?.() || 0));
       if (recentPings.length < 2) continue;
 
       const stopPings = recentPings.filter((p) => p.timestamp?.toDate?.() >= stopCutoff);
@@ -44,10 +44,12 @@ async function detectStops() {
       // Check if stop event already exists for this session in last 10 min
       const existingSnap = await db.collection('stopEvents')
         .where('sessionId', '==', sessionDoc.id)
-        .where('createdAt', '>=', cutoff)
-        .limit(1)
         .get();
-      if (!existingSnap.empty) continue;
+      const recentStop = existingSnap.docs.find((d) => {
+        const t = d.data().createdAt?.toDate?.();
+        return t && t >= cutoff;
+      });
+      if (recentStop) continue;
 
       const address = await reverseGeocode(refPing.lat, refPing.lng);
       const now = new Date();

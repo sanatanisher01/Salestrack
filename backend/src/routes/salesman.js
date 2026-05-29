@@ -90,11 +90,10 @@ router.get('/orders', async (req, res) => {
     const db = getDb();
     const snap = await db.collection('orders')
       .where('salesmanId', '==', req.user.uid)
-      .orderBy('createdAt', 'desc')
-      .limit(Math.min(Number(limit) || 50, 100))
-      .offset(Number(offset) || 0)
       .get();
-    const orders = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    let orders = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    orders.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    orders = orders.slice(Number(offset) || 0, (Number(offset) || 0) + Math.min(Number(limit) || 50, 100));
     res.json({ orders });
   } catch (err) {
     console.error('Salesman get orders error:', err);

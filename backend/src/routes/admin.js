@@ -117,11 +117,10 @@ router.get('/trail/:salesmanId', async (req, res) => {
     if (!activeSessionId) return res.json({ trail: [] });
     const snap = await db.collection('locationPings')
       .where('sessionId', '==', activeSessionId)
-      .orderBy('timestamp', 'asc')
-      .limit(500)
       .get();
     const trail = snap.docs
       .map((d) => d.data())
+      .sort((a, b) => (a.timestamp?.toMillis?.() || 0) - (b.timestamp?.toMillis?.() || 0))
       .map((p) => [p.lat, p.lng]);
     res.json({ trail });
   } catch (err) {

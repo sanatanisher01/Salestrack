@@ -51,11 +51,13 @@ router.post('/ping', requireRole('salesman'), async (req, res) => {
     // Update session distance incrementally (only last 2 pings)
     const lastPingsSnap = await db.collection('locationPings')
       .where('sessionId', '==', activeSessionId)
-      .orderBy('timestamp', 'desc')
-      .limit(2)
       .get();
-    if (lastPingsSnap.size === 2) {
-      const [p1, p2] = lastPingsSnap.docs.map(d => d.data());
+    const lastPings = lastPingsSnap.docs
+      .map(d => d.data())
+      .sort((a, b) => (b.timestamp?.toMillis?.() || 0) - (a.timestamp?.toMillis?.() || 0))
+      .slice(0, 2);
+    if (lastPings.length === 2) {
+      const [p1, p2] = lastPings;
       const dist = haversineDistance(p1.lat, p1.lng, p2.lat, p2.lng) / 1000;
       if (dist > 0.001) { // Only update if moved more than 1 meter
         const sessionDoc = await db.collection('dutySessions').doc(activeSessionId).get();
@@ -93,11 +95,10 @@ router.get('/trail', requireRole('salesman'), async (req, res) => {
     if (!activeSessionId) return res.json({ trail: [] });
     const snap = await db.collection('locationPings')
       .where('sessionId', '==', activeSessionId)
-      .orderBy('timestamp', 'asc')
-      .limit(1000)
       .get();
     const trail = snap.docs
       .map((d) => d.data())
+      .sort((a, b) => (a.timestamp?.toMillis?.() || 0) - (b.timestamp?.toMillis?.() || 0))
       .map((p) => [p.lat, p.lng]);
     res.json({ trail });
   } catch (err) {

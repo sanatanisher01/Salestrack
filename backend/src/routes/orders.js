@@ -81,17 +81,15 @@ router.get('/', requireRole('owner', 'accountant'), async (req, res) => {
     if (salesmanId) query = query.where('salesmanId', '==', salesmanId);
     if (status) query = query.where('status', '==', status);
 
-    const snap = await query
-      .orderBy('createdAt', 'desc')
-      .limit(Math.min(Number(limit) || 50, 200))
-      .offset(Number(offset) || 0)
-      .get();
+    const snap = await query.get();
 
     let orders = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-    // Client-side date filtering (Firestore doesn't support multiple range queries)
+    // Client-side filtering and sorting (avoids needing composite indexes)
     if (startDate) orders = orders.filter((o) => o.createdAt?.toDate?.() >= new Date(startDate));
     if (endDate) orders = orders.filter((o) => o.createdAt?.toDate?.() <= new Date(endDate));
+    orders.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    orders = orders.slice(Number(offset) || 0, (Number(offset) || 0) + Math.min(Number(limit) || 50, 200));
 
     res.json({ orders });
   } catch (err) {

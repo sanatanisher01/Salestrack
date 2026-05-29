@@ -45,11 +45,10 @@ router.get('/', authenticate, async (req, res) => {
     const db = getDb();
     const snap = await db.collection('notifications')
       .where('recipientId', '==', req.user.uid)
-      .orderBy('createdAt', 'desc')
-      .limit(Math.min(Number(limit) || 50, 100))
-      .offset(Number(offset) || 0)
       .get();
-    const notifications = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    let notifications = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    notifications.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    notifications = notifications.slice(Number(offset) || 0, (Number(offset) || 0) + Math.min(Number(limit) || 50, 100));
     res.json({ notifications });
   } catch (err) {
     console.error('Get notifications error:', err);
@@ -75,12 +74,11 @@ router.post('/read-all', authenticate, async (req, res) => {
     const db = getDb();
     const snap = await db.collection('notifications')
       .where('recipientId', '==', req.user.uid)
-      .where('read', '==', false)
-      .limit(500)
       .get();
-    if (snap.empty) return res.json({ message: 'No unread notifications' });
+    const unread = snap.docs.filter((d) => !d.data().read);
+    if (unread.length === 0) return res.json({ message: 'No unread notifications' });
     const batch = db.batch();
-    snap.docs.forEach((d) => batch.update(d.ref, { read: true }));
+    unread.slice(0, 500).forEach((d) => batch.update(d.ref, { read: true }));
     await batch.commit();
     res.json({ message: 'All marked as read' });
   } catch (err) {

@@ -141,12 +141,10 @@ router.get('/duty-sessions', async (req, res) => {
     let query = db.collection('dutySessions').where('ownerId', '==', req.user.uid);
     if (salesmanId) query = query.where('salesmanId', '==', salesmanId);
     if (status) query = query.where('status', '==', status);
-    const snap = await query
-      .orderBy('startedAt', 'desc')
-      .limit(Math.min(Number(limit) || 50, 100))
-      .offset(Number(offset) || 0)
-      .get();
-    const sessions = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const snap = await query.get();
+    let sessions = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    sessions.sort((a, b) => (b.startedAt?.toMillis?.() || 0) - (a.startedAt?.toMillis?.() || 0));
+    sessions = sessions.slice(Number(offset) || 0, (Number(offset) || 0) + Math.min(Number(limit) || 50, 100));
     res.json({ sessions });
   } catch (err) {
     console.error('Owner get duty sessions error:', err);
@@ -162,13 +160,12 @@ router.get('/duty-sessions/:id/trail', async (req, res) => {
 
     const snap = await db.collection('locationPings')
       .where('sessionId', '==', req.params.id)
-      .orderBy('timestamp', 'asc')
-      .limit(1000)
       .get();
     const trail = snap.docs.map((d) => {
       const data = d.data();
       return { id: d.id, lat: data.lat, lng: data.lng, timestamp: data.timestamp };
     });
+    trail.sort((a, b) => (a.timestamp?.toMillis?.() || 0) - (b.timestamp?.toMillis?.() || 0));
     res.json({ trail });
   } catch (err) {
     console.error('Owner get trail error:', err);
@@ -182,11 +179,10 @@ router.get('/stop-events', async (req, res) => {
     const db = getDb();
     const snap = await db.collection('stopEvents')
       .where('ownerId', '==', req.user.uid)
-      .orderBy('createdAt', 'desc')
-      .limit(Math.min(Number(limit) || 50, 100))
-      .offset(Number(offset) || 0)
       .get();
-    const events = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    let events = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    events.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    events = events.slice(Number(offset) || 0, (Number(offset) || 0) + Math.min(Number(limit) || 50, 100));
     res.json({ events });
   } catch (err) {
     console.error('Owner get stop events error:', err);
