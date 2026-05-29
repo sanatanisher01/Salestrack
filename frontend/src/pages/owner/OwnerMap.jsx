@@ -159,7 +159,7 @@ export default function OwnerMap() {
 
           {salesmen.map((s, i) => {
             const color = COLORS[i % COLORS.length];
-            const trail = getTrailWithLive(s.uid);
+            const trail = selected === s.uid ? getTrailWithLive(s.uid) : [];
             return (
               <span key={s.uid}>
                 {trail.length > 1 && (
