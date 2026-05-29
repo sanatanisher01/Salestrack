@@ -24,54 +24,24 @@ function MapController({ position, shouldFollow }) {
   const initialized = useRef(false);
   useEffect(() => {
     if (!position) return;
-    if (!initialized.current) {
-      map.setView(position, 16);
-      initialized.current = true;
-    } else if (shouldFollow) {
-      map.panTo(position, { animate: true, duration: 0.5 });
-    }
+    if (!initialized.current) { map.setView(position, 16); initialized.current = true; }
+    else if (shouldFollow) { map.panTo(position, { animate: true, duration: 0.5 }); }
   }, [position, shouldFollow]);
   return null;
 }
 
-// --- Persistent notification to keep tracking alive in background ---
-async function showTrackingNotification() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission !== 'granted') {
-    await Notification.requestPermission();
-  }
-  if (Notification.permission !== 'granted') return;
-
+// --- Service Worker communication ---
+async function tellSW(type, data) {
   const reg = await navigator.serviceWorker?.ready;
-  if (reg) {
-    reg.showNotification('SalesTrack - On Duty', {
-      body: 'Location tracking is active. Keep this running.',
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      tag: 'duty-tracking', // Replaces existing notification
-      requireInteraction: true, // Stays until dismissed
-      silent: true,
-    });
+  if (reg?.active) {
+    reg.active.postMessage({ type, data });
   }
 }
 
-async function hideTrackingNotification() {
-  const reg = await navigator.serviceWorker?.ready;
-  if (reg) {
-    const notifications = await reg.getNotifications({ tag: 'duty-tracking' });
-    notifications.forEach((n) => n.close());
-  }
-}
-
-// --- Ping queue for offline resilience ---
+// --- Ping queue for offline ---
 const PING_QUEUE_KEY = 'pending_pings';
-
-function getPendingPings() {
-  try { return JSON.parse(localStorage.getItem(PING_QUEUE_KEY) || '[]'); } catch { return []; }
-}
-function savePendingPings(pings) {
-  localStorage.setItem(PING_QUEUE_KEY, JSON.stringify(pings.slice(-100)));
-}
+function getPendingPings() { try { return JSON.parse(localStorage.getItem(PING_QUEUE_KEY) || '[]'); } catch { return []; } }
+function savePendingPings(pings) { localStorage.setItem(PING_QUEUE_KEY, JSON.stringify(pings.slice(-100))); }
 async function flushPendingPings() {
   const pings = getPendingPings();
   if (!pings.length) return;
@@ -82,44 +52,10 @@ async function flushPendingPings() {
   }
   savePendingPings(remaining);
 }
-if (typeof window !== 'undefined') {
-  window.addEventListener('online', flushPendingPings);
-}
-
-// --- Background interval ping (keeps sending even when tab is backgrounded) ---
-let bgIntervalId = null;
-let lastKnownPosition = null;
-
-function startBackgroundPinger() {
-  if (bgIntervalId) return;
-  // setInterval continues in background on mobile browsers (unlike watchPosition)
-  bgIntervalId = setInterval(() => {
-    if (!lastKnownPosition) return;
-    const { lat, lng, accuracy } = lastKnownPosition;
-    const ping = { lat, lng, accuracy };
-    if (!navigator.onLine) {
-      const pending = getPendingPings();
-      pending.push(ping);
-      savePendingPings(pending);
-      return;
-    }
-    api.post('/location/ping', ping).catch((err) => {
-      if (!err.response) {
-        const pending = getPendingPings();
-        pending.push(ping);
-        savePendingPings(pending);
-      }
-    });
-  }, 10000); // Every 10 seconds
-}
-
-function stopBackgroundPinger() {
-  if (bgIntervalId) { clearInterval(bgIntervalId); bgIntervalId = null; }
-  lastKnownPosition = null;
-}
+if (typeof window !== 'undefined') window.addEventListener('online', flushPendingPings);
 
 export default function SalesmanMap() {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const [position, setPosition] = useState(null);
   const [accuracy, setAccuracy] = useState(null);
   const [dutyStatus, setDutyStatus] = useState('off');
@@ -135,6 +71,17 @@ export default function SalesmanMap() {
   const lastPingTimeRef = useRef(0);
   const MIN_PING_INTERVAL = 5000;
 
+  // Listen for SW messages (e.g., "End Duty" from notification)
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === 'END_DUTY') {
+        endDuty();
+      }
+    };
+    navigator.serviceWorker?.addEventListener('message', handler);
+    return () => navigator.serviceWorker?.removeEventListener('message', handler);
+  }, []);
+
   useEffect(() => {
     api.get('/salesman/duty/status').then(({ data }) => {
       setDutyStatus(data.dutyStatus);
@@ -142,9 +89,10 @@ export default function SalesmanMap() {
         fetchTrailFromDB();
         startDutyTracking();
         startTrailPolling();
-        startBackgroundPinger();
-        showTrackingNotification();
+        // Start SW background tracking
+        tellSW('START_TRACKING', { apiUrl: import.meta.env.VITE_API_URL, token });
         flushPendingPings();
+        requestWakeLock();
       }
     }).catch(() => {});
 
@@ -156,8 +104,8 @@ export default function SalesmanMap() {
         setPosition(pos);
         setAccuracy(coords.accuracy);
         setSpeed(coords.speed ? Math.round(coords.speed * 3.6) : null);
-        // Always update lastKnownPosition for background pinger
-        lastKnownPosition = { lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy };
+        // Send position to SW so it can ping in background
+        tellSW('UPDATE_POSITION', { lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy });
       },
       () => {},
       { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
@@ -169,22 +117,47 @@ export default function SalesmanMap() {
     };
   }, []);
 
-  const fetchTrailFromDB = async () => {
+  // Wake Lock to prevent screen/CPU sleep
+  const wakeLockRef = useRef(null);
+  const requestWakeLock = async () => {
     try {
-      const { data } = await api.get('/location/trail');
-      if (data.trail.length > 0) {
-        trailRef.current = data.trail;
-        setTrail([...data.trail]);
+      if ('wakeLock' in navigator) {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+        wakeLockRef.current.addEventListener('release', () => {
+          // Re-acquire if released (e.g., tab becomes visible again)
+          if (dutyStatus === 'on') requestWakeLock();
+        });
       }
     } catch {}
   };
+  const releaseWakeLock = () => {
+    if (wakeLockRef.current) { wakeLockRef.current.release(); wakeLockRef.current = null; }
+  };
 
-  const startTrailPolling = () => {
-    trailIntervalRef.current = setInterval(fetchTrailFromDB, 30000);
+  // Re-acquire wake lock when page becomes visible
+  useEffect(() => {
+    const handler = () => {
+      if (document.visibilityState === 'visible' && dutyStatus === 'on') {
+        requestWakeLock();
+        // Also re-send current position to SW
+        if (position) {
+          tellSW('UPDATE_POSITION', { lat: position[0], lng: position[1], accuracy });
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
+  }, [dutyStatus, position]);
+
+  const fetchTrailFromDB = async () => {
+    try {
+      const { data } = await api.get('/location/trail');
+      if (data.trail.length > 0) { trailRef.current = data.trail; setTrail([...data.trail]); }
+    } catch {}
   };
-  const stopTrailPolling = () => {
-    if (trailIntervalRef.current) { clearInterval(trailIntervalRef.current); trailIntervalRef.current = null; }
-  };
+
+  const startTrailPolling = () => { trailIntervalRef.current = setInterval(fetchTrailFromDB, 30000); };
+  const stopTrailPolling = () => { if (trailIntervalRef.current) { clearInterval(trailIntervalRef.current); trailIntervalRef.current = null; } };
 
   const sendPing = async (lat, lng, acc) => {
     const ping = { lat, lng, accuracy: acc };
@@ -210,17 +183,15 @@ export default function SalesmanMap() {
           );
           if (dist < MIN_DISTANCE) return;
         }
-
-        // Update local trail immediately
         trailRef.current = [...trailRef.current, newPos];
         setTrail([...trailRef.current]);
 
-        // Throttle server pings
         const now = Date.now();
         if (now - lastPingTimeRef.current < MIN_PING_INTERVAL) return;
         lastPingTimeRef.current = now;
-
         sendPing(coords.latitude, coords.longitude, coords.accuracy);
+        // Also update SW
+        tellSW('UPDATE_POSITION', { lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy });
       },
       () => {},
       { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
@@ -228,9 +199,23 @@ export default function SalesmanMap() {
   };
 
   const stopDutyTracking = () => {
-    if (dutyWatchRef.current != null) {
-      navigator.geolocation.clearWatch(dutyWatchRef.current);
-      dutyWatchRef.current = null;
+    if (dutyWatchRef.current != null) { navigator.geolocation.clearWatch(dutyWatchRef.current); dutyWatchRef.current = null; }
+  };
+
+  const endDuty = async () => {
+    try {
+      await flushPendingPings();
+      stopDutyTracking();
+      stopTrailPolling();
+      tellSW('STOP_TRACKING');
+      releaseWakeLock();
+      await api.post('/salesman/duty/stop');
+      setDutyStatus('off');
+      trailRef.current = [];
+      setTrail([]);
+      toast.success('Duty ended');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed');
     }
   };
 
@@ -244,20 +229,11 @@ export default function SalesmanMap() {
         setTrail([]);
         startDutyTracking();
         startTrailPolling();
-        startBackgroundPinger();
-        showTrackingNotification();
+        tellSW('START_TRACKING', { apiUrl: import.meta.env.VITE_API_URL, token });
+        requestWakeLock();
         toast.success('Duty started!');
       } else {
-        await flushPendingPings();
-        stopDutyTracking();
-        stopTrailPolling();
-        stopBackgroundPinger();
-        hideTrackingNotification();
-        await api.post('/salesman/duty/stop');
-        setDutyStatus('off');
-        trailRef.current = [];
-        setTrail([]);
-        toast.success('Duty ended');
+        await endDuty();
       }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed');
@@ -268,9 +244,7 @@ export default function SalesmanMap() {
 
   const handleRecenter = useCallback(() => {
     setFollowMode(true);
-    if (position && mapRef.current) {
-      mapRef.current.setView(position, 16, { animate: true });
-    }
+    if (position && mapRef.current) { mapRef.current.setView(position, 16, { animate: true }); }
   }, [position]);
 
   return (
@@ -317,15 +291,9 @@ export default function SalesmanMap() {
           </div>
           <div className="glass rounded-2xl px-3 py-2.5 shadow-float text-center">
             {speed !== null ? (
-              <>
-                <p className="text-sm font-bold text-gray-900">{speed}</p>
-                <p className="text-[9px] text-gray-400 font-semibold">km/h</p>
-              </>
+              <><p className="text-sm font-bold text-gray-900">{speed}</p><p className="text-[9px] text-gray-400 font-semibold">km/h</p></>
             ) : accuracy ? (
-              <>
-                <p className="text-sm font-bold text-gray-900">±{Math.round(accuracy)}</p>
-                <p className="text-[9px] text-gray-400 font-semibold">meters</p>
-              </>
+              <><p className="text-sm font-bold text-gray-900">±{Math.round(accuracy)}</p><p className="text-[9px] text-gray-400 font-semibold">meters</p></>
             ) : (
               <p className="text-xs text-gray-400">GPS...</p>
             )}
@@ -333,10 +301,8 @@ export default function SalesmanMap() {
         </div>
 
         {/* Recenter */}
-        <button
-          onClick={handleRecenter}
-          className={`absolute bottom-24 right-3 z-[999] w-11 h-11 glass rounded-2xl shadow-float flex items-center justify-center hover:bg-white/90 active:scale-95 transition-all ${!followMode ? 'ring-2 ring-indigo-400' : ''}`}
-        >
+        <button onClick={handleRecenter}
+          className={`absolute bottom-24 right-3 z-[999] w-11 h-11 glass rounded-2xl shadow-float flex items-center justify-center hover:bg-white/90 active:scale-95 transition-all ${!followMode ? 'ring-2 ring-indigo-400' : ''}`}>
           <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -345,21 +311,11 @@ export default function SalesmanMap() {
 
         {/* Duty button */}
         <div className="absolute bottom-3 left-3 right-3 z-[999]">
-          <button
-            onClick={toggleDuty}
-            disabled={loading}
-            className={`w-full py-4 rounded-2xl text-white text-sm font-bold shadow-float transition-all active:scale-[0.98] disabled:opacity-60 ${
-              dutyStatus === 'on'
-                ? 'bg-gradient-to-r from-rose-500 to-rose-600'
-                : 'bg-gradient-to-r from-indigo-600 to-indigo-700'
-            }`}
-          >
+          <button onClick={toggleDuty} disabled={loading}
+            className={`w-full py-4 rounded-2xl text-white text-sm font-bold shadow-float transition-all active:scale-[0.98] disabled:opacity-60 ${dutyStatus === 'on' ? 'bg-gradient-to-r from-rose-500 to-rose-600' : 'bg-gradient-to-r from-indigo-600 to-indigo-700'}`}>
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                </svg>
+                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
                 Processing...
               </span>
             ) : dutyStatus === 'on' ? 'End Duty' : 'Start Duty'}
