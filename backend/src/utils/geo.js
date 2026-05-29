@@ -1,3 +1,5 @@
+const https = require('https');
+
 function haversineDistance(lat1, lng1, lat2, lng2) {
   const R = 6371000;
   const toRad = (d) => (d * Math.PI) / 180;
@@ -9,17 +11,29 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-async function reverseGeocode(lat, lng) {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-      { headers: { 'User-Agent': 'SalesTrack/1.0' } }
-    );
-    const data = await res.json();
-    return data.display_name || `${lat},${lng}`;
-  } catch {
-    return `${lat},${lng}`;
-  }
+function reverseGeocode(lat, lng) {
+  return new Promise((resolve) => {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
+    https.get(url, { headers: { 'User-Agent': 'SalesTrack/1.0' } }, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          const a = json.address || {};
+          const parts = [
+            a.neighbourhood || a.suburb || a.quarter || a.hamlet,
+            a.road || a.pedestrian || a.footway,
+            a.village || a.town || a.city_district,
+            a.city || a.county,
+            a.state,
+            a.postcode,
+          ].filter(Boolean);
+          resolve(parts.length ? parts.join(', ') : (json.display_name || `${lat},${lng}`));
+        } catch { resolve(`${lat},${lng}`); }
+      });
+    }).on('error', () => resolve(`${lat},${lng}`));
+  });
 }
 
 module.exports = { haversineDistance, reverseGeocode };

@@ -5,27 +5,44 @@ import api from '../../api/axios';
 import toast from 'react-hot-toast';
 
 const QUEUE_KEY = 'order_queue';
+
+function generateLocalId() {
+  return `local_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
 function saveToQueue(order) {
   const queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
   queue.push(order);
   localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
 }
+
 async function flushQueue() {
   const queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
   if (!queue.length) return;
   const remaining = [];
   for (const order of queue) {
-    try { await api.post('/orders', order); } catch { remaining.push(order); }
+    try {
+      await api.post('/orders', order);
+    } catch (err) {
+      // Only keep in queue if it's a network error, not a validation error
+      if (!err.response) {
+        remaining.push(order);
+      }
+    }
   }
   localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining));
 }
-if (typeof window !== 'undefined') window.addEventListener('online', flushQueue);
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', flushQueue);
+}
 
 export default function NewOrder() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ customerName: '', customerPhone: '', note: '' });
   const [items, setItems] = useState([{ productName: '', quantity: 1, unitPrice: 0 }]);
   const [loading, setLoading] = useState(false);
+  const [submittedId, setSubmittedId] = useState(null); // Prevent double-submit
 
   const addItem = () => setItems([...items, { productName: '', quantity: 1, unitPrice: 0 }]);
   const removeItem = (i) => setItems(items.filter((_, idx) => idx !== i));
@@ -39,8 +56,13 @@ export default function NewOrder() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading || submittedId) return; // Prevent double-submit
     setLoading(true);
-    const order = { ...form, items };
+
+    const localId = generateLocalId();
+    setSubmittedId(localId);
+
+    const order = { ...form, items, _localId: localId };
     try {
       if (!navigator.onLine) {
         saveToQueue(order);
@@ -52,6 +74,7 @@ export default function NewOrder() {
       toast.success('Order submitted!');
       navigate('/salesman/orders');
     } catch (err) {
+      setSubmittedId(null); // Allow retry on error
       toast.error(err.response?.data?.error || 'Failed');
     } finally {
       setLoading(false);
@@ -124,7 +147,7 @@ export default function NewOrder() {
           <textarea className="input resize-none" placeholder="Optional note..." rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
         </div>
 
-        <button type="submit" disabled={loading} className="btn-primary w-full py-3.5 text-base">
+        <button type="submit" disabled={loading || !!submittedId} className="btn-primary w-full py-3.5 text-base">
           {loading ? 'Submitting...' : 'Submit Order'}
         </button>
       </form>

@@ -8,6 +8,7 @@ let refreshTimer = null;
 
 function scheduleRefresh(get) {
   if (refreshTimer) clearInterval(refreshTimer);
+  // Refresh every 45 minutes (token expires in 1 hour)
   refreshTimer = setInterval(async () => {
     const { token } = get();
     if (!token) return;
@@ -17,7 +18,7 @@ function scheduleRefresh(get) {
     } catch {
       get().logout();
     }
-  }, 20 * 60 * 1000); // every 20 minutes
+  }, 45 * 60 * 1000);
 }
 
 export const useAuthStore = create(
@@ -52,6 +53,7 @@ export const useAuthStore = create(
         try { await api.post('/auth/logout'); } catch {}
         try { await signOut(auth); } catch {}
         set({ user: null, token: null, firebaseReady: false });
+        sessionStorage.removeItem('salestrack-push-subscribed');
       },
 
       hydrate: async () => {

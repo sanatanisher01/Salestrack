@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SalesmanLayout from '../../layouts/SalesmanLayout';
 import api from '../../api/axios';
@@ -10,25 +10,11 @@ export default function SalesmanDashboard() {
   const [dutyStatus, setDutyStatus] = useState('off');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
-  const watchRef = useRef(null);
 
   useEffect(() => {
-    api.get('/salesman/duty/status').then(({ data }) => setDutyStatus(data.dutyStatus));
-    api.get('/salesman/orders').then(({ data }) => setOrders(data.orders));
+    api.get('/salesman/duty/status').then(({ data }) => setDutyStatus(data.dutyStatus)).catch(() => {});
+    api.get('/salesman/orders').then(({ data }) => setOrders(data.orders)).catch(() => {});
   }, []);
-
-  const startTracking = () => {
-    if (!navigator.geolocation) return;
-    watchRef.current = navigator.geolocation.watchPosition(
-      ({ coords }) => api.post('/location/ping', { lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy }).catch(() => {}),
-      () => {},
-      { enableHighAccuracy: true, maximumAge: 5000 }
-    );
-  };
-
-  const stopTracking = () => {
-    if (watchRef.current != null) { navigator.geolocation.clearWatch(watchRef.current); watchRef.current = null; }
-  };
 
   const toggleDuty = async () => {
     setLoading(true);
@@ -36,10 +22,8 @@ export default function SalesmanDashboard() {
       if (dutyStatus === 'off') {
         await api.post('/salesman/duty/start');
         setDutyStatus('on');
-        startTracking();
-        toast.success('Duty started!');
+        toast.success('Duty started! Go to Map to see tracking.');
       } else {
-        stopTracking();
         await api.post('/salesman/duty/stop');
         setDutyStatus('off');
         toast.success('Duty ended');
@@ -50,11 +34,6 @@ export default function SalesmanDashboard() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (dutyStatus === 'on') startTracking();
-    return stopTracking;
-  }, [dutyStatus]);
 
   const todayOrders = orders.filter((o) => {
     const d = o.createdAt?._seconds ? new Date(o.createdAt._seconds * 1000) : new Date(o.createdAt);
@@ -76,13 +55,20 @@ export default function SalesmanDashboard() {
           </div>
           <p className="text-white/70 text-sm">Status</p>
           <p className="text-white text-3xl font-bold">{dutyStatus === 'on' ? 'On Duty' : 'Off Duty'}</p>
-          <button
-            onClick={toggleDuty}
-            disabled={loading}
-            className={`mt-5 px-6 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95 disabled:opacity-60 ${dutyStatus === 'on' ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-white text-gray-900 hover:bg-gray-100'}`}
-          >
-            {loading ? 'Processing...' : dutyStatus === 'on' ? 'End Duty' : 'Start Duty'}
-          </button>
+          <div className="flex items-center gap-3 mt-5">
+            <button
+              onClick={toggleDuty}
+              disabled={loading}
+              className={`px-6 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95 disabled:opacity-60 ${dutyStatus === 'on' ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-white text-gray-900 hover:bg-gray-100'}`}
+            >
+              {loading ? 'Processing...' : dutyStatus === 'on' ? 'End Duty' : 'Start Duty'}
+            </button>
+            {dutyStatus === 'on' && (
+              <Link to="/salesman/map" className="px-4 py-2.5 rounded-2xl text-sm font-bold bg-white/10 hover:bg-white/20 text-white transition-all">
+                View Map →
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 

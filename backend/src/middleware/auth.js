@@ -3,7 +3,7 @@ const { getDb } = require('../config/firebase');
 
 // In-memory cache: uid -> { user, ts }
 const userCache = new Map();
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes (reduced from 10)
 
 async function authenticate(req, res, next) {
   const auth = req.headers.authorization;
@@ -14,26 +14,22 @@ async function authenticate(req, res, next) {
     const payload = verifyToken(auth.slice(7));
     const uid = payload.uid;
 
-    // If JWT has full user data embedded, use it directly — zero Firestore reads
-    if (payload.name && payload.role && payload.isActive !== undefined) {
-      req.user = { uid, name: payload.name, email: payload.email, role: payload.role, ownerId: payload.ownerId || null, isActive: payload.isActive, phone: payload.phone || '' };
-      return next();
-    }
-
-    // Check in-memory cache
+    // Always verify user status from cache or DB — never trust JWT payload alone
     const cached = userCache.get(uid);
     if (cached && Date.now() - cached.ts < CACHE_TTL) {
       req.user = cached.user;
       return next();
     }
 
-    // Last resort: Firestore read
+    // Firestore read to verify current user state
     const db = getDb();
     const snap = await db.collection('users').doc(uid).get();
     if (!snap.exists || !snap.data().isActive) {
+      userCache.delete(uid);
       return res.status(401).json({ error: 'User not found or inactive' });
     }
-    const user = { uid, ...snap.data() };
+    const data = snap.data();
+    const user = { uid, name: data.name, email: data.email, role: data.role, ownerId: data.ownerId || null, isActive: data.isActive, phone: data.phone || '' };
     userCache.set(uid, { user, ts: Date.now() });
     req.user = user;
     next();

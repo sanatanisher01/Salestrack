@@ -3,40 +3,47 @@ const { getDb, getAdmin } = require('../config/firebase');
 const { comparePassword, hashPassword } = require('../utils/password');
 const { generateToken } = require('../utils/jwt');
 const { loginLimiter } = require('../middleware/rateLimiter');
+const { isValidEmail, isValidPassword } = require('../utils/validate');
 
 const router = express.Router();
 
 router.post('/login', loginLimiter, async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email format' });
 
-  const db = getDb();
-  const snap = await db.collection('users').where('email', '==', email).get();
-  if (snap.empty) return res.status(401).json({ error: 'Invalid credentials' });
+    const db = getDb();
+    const snap = await db.collection('users').where('email', '==', email.toLowerCase().trim()).get();
+    if (snap.empty) return res.status(401).json({ error: 'Invalid credentials' });
 
-  const doc = snap.docs[0];
-  const user = { uid: doc.id, ...doc.data() };
+    const doc = snap.docs[0];
+    const user = { uid: doc.id, ...doc.data() };
 
-  if (!user.isActive) return res.status(403).json({ error: 'Account deactivated' });
+    if (!user.isActive) return res.status(403).json({ error: 'Account deactivated' });
 
-  if (user.lockedUntil && user.lockedUntil.toDate() > new Date()) {
-    return res.status(429).json({ error: 'Account temporarily locked' });
+    if (user.lockedUntil && user.lockedUntil.toDate() > new Date()) {
+      return res.status(429).json({ error: 'Account temporarily locked. Try again later.' });
+    }
+
+    const valid = await comparePassword(password, user.passwordHash);
+    if (!valid) {
+      const attempts = (user.failedLoginAttempts || 0) + 1;
+      const update = { failedLoginAttempts: attempts };
+      if (attempts >= 5) update.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+      await doc.ref.update(update);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    await doc.ref.update({ failedLoginAttempts: 0, lockedUntil: null });
+
+    const token = generateToken({ uid: user.uid, role: user.role });
+    const { passwordHash, ...safeUser } = user;
+    res.json({ token, user: safeUser });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  const valid = await comparePassword(password, user.passwordHash);
-  if (!valid) {
-    const attempts = (user.failedLoginAttempts || 0) + 1;
-    const update = { failedLoginAttempts: attempts };
-    if (attempts >= 5) update.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
-    await doc.ref.update(update);
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-
-  await doc.ref.update({ failedLoginAttempts: 0, lockedUntil: null });
-
-  const token = generateToken({ uid: user.uid, role: user.role, name: user.name, email: user.email, ownerId: user.ownerId || null, isActive: user.isActive, phone: user.phone || '' });
-  const { passwordHash, ...safeUser } = user;
-  res.json({ token, user: safeUser });
 });
 
 router.post('/logout', async (req, res) => {
@@ -45,23 +52,34 @@ router.post('/logout', async (req, res) => {
 
 // Refresh token — issues a new token if current one is still valid
 router.post('/refresh', require('../middleware/auth').authenticate, async (req, res) => {
-  const token = generateToken({ uid: req.user.uid, role: req.user.role, name: req.user.name, email: req.user.email, ownerId: req.user.ownerId || null, isActive: req.user.isActive, phone: req.user.phone || '' });
-  const { passwordHash, ...safeUser } = req.user;
-  res.json({ token, user: safeUser });
+  try {
+    const token = generateToken({ uid: req.user.uid, role: req.user.role });
+    const { passwordHash, ...safeUser } = req.user;
+    res.json({ token, user: safeUser });
+  } catch (err) {
+    console.error('Refresh error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 router.post('/change-password', require('../middleware/auth').authenticate, async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords required' });
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords required' });
+    if (!isValidPassword(newPassword)) return res.status(400).json({ error: 'New password must be at least 8 characters' });
 
-  const db = getDb();
-  const doc = await db.collection('users').doc(req.user.uid).get();
-  const valid = await comparePassword(currentPassword, doc.data().passwordHash);
-  if (!valid) return res.status(401).json({ error: 'Current password incorrect' });
+    const db = getDb();
+    const doc = await db.collection('users').doc(req.user.uid).get();
+    const valid = await comparePassword(currentPassword, doc.data().passwordHash);
+    if (!valid) return res.status(401).json({ error: 'Current password incorrect' });
 
-  const passwordHash = await hashPassword(newPassword);
-  await doc.ref.update({ passwordHash, updatedAt: new Date() });
-  res.json({ message: 'Password changed' });
+    const passwordHash = await hashPassword(newPassword);
+    await doc.ref.update({ passwordHash, updatedAt: new Date() });
+    res.json({ message: 'Password changed' });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 router.get('/me', require('../middleware/auth').authenticate, (req, res) => {
@@ -70,9 +88,14 @@ router.get('/me', require('../middleware/auth').authenticate, (req, res) => {
 });
 
 router.get('/firebase-token', require('../middleware/auth').authenticate, async (req, res) => {
-  const admin = getAdmin();
-  const customToken = await admin.auth().createCustomToken(req.user.uid);
-  res.json({ customToken });
+  try {
+    const admin = getAdmin();
+    const customToken = await admin.auth().createCustomToken(req.user.uid);
+    res.json({ customToken });
+  } catch (err) {
+    console.error('Firebase token error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 module.exports = router;

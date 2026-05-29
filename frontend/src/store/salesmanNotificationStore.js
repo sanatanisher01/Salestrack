@@ -1,27 +1,3 @@
-import { create } from 'zustand';
-import api from '../api/axios';
-
-export const useSalesmanNotificationStore = create((set, get) => ({
-  notifications: [],
-  unreadCount: 0,
-  _interval: null,
-
-  init: (uid) => {
-    get().cleanup();
-    const fetch = async () => {
-      try {
-        const { data } = await api.get('/notifications');
-        set({ notifications: data.notifications, unreadCount: data.notifications.filter((n) => !n.read).length });
-      } catch {}
-    };
-    fetch();
-    const interval = setInterval(fetch, 60000); // every 60 seconds
-    set({ _interval: interval });
-  },
-
-  cleanup: () => {
-    const { _interval } = get();
-    if (_interval) clearInterval(_interval);
-    set({ _interval: null, notifications: [], unreadCount: 0 });
-  },
-}));
+// Re-export the shared notification store for backward compatibility.
+// Both owner and salesman use the same notification mechanism.
+export { useNotificationStore as useSalesmanNotificationStore } from './notificationStore';

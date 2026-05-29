@@ -9,12 +9,19 @@ export default function OwnerTeam() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const load = () => api.get('/owner/team').then(({ data }) => setTeam(data.team));
   useEffect(() => { load(); }, []);
 
+  const filtered = team.filter((m) => m.role === tab);
+
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (form.password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
     setLoading(true);
     try {
       await api.post(tab === 'salesman' ? '/owner/team/salesman' : '/owner/team/accountant', form);
@@ -29,11 +36,13 @@ export default function OwnerTeam() {
     }
   };
 
-  const [confirmDelete, setConfirmDelete] = useState(null);
-
   const toggle = async (uid, isActive) => {
-    await api.patch(`/owner/team/${uid}/${isActive ? 'deactivate' : 'activate'}`);
-    load();
+    try {
+      await api.patch(`/owner/team/${uid}/${isActive ? 'deactivate' : 'activate'}`);
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed');
+    }
   };
 
   const handleDelete = async (uid) => {
@@ -96,7 +105,7 @@ export default function OwnerTeam() {
               {tab === 'salesman' && (
                 <input className="input" placeholder="Phone (optional)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               )}
-              <input className="input" type="password" placeholder="Password *" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+              <input className="input" type="password" placeholder="Password * (min 8 chars)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
               <div className="flex gap-2 pt-1">
                 <button type="submit" disabled={loading} className="btn-primary flex-1">{loading ? 'Creating...' : 'Create'}</button>
                 <button type="button" onClick={() => setShowForm(false)} className="btn-secondary flex-1">Cancel</button>

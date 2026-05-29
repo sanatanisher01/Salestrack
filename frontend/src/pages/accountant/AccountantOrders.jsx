@@ -3,9 +3,14 @@ import AccountantLayout from '../../layouts/AccountantLayout';
 import api from '../../api/axios';
 import { format } from 'date-fns';
 
+function formatDate(val) {
+  if (!val) return '';
+  if (val?._seconds) return format(new Date(val._seconds * 1000), 'dd MMM, hh:mm a');
+  try { return format(new Date(val), 'dd MMM, hh:mm a'); } catch { return ''; }
+}
+
 export default function AccountantOrders() {
   const [orders, setOrders] = useState([]);
-  const [team, setTeam] = useState([]);
   const [filter, setFilter] = useState({ salesmanId: '', startDate: '', endDate: '' });
 
   const load = () => {
@@ -13,15 +18,14 @@ export default function AccountantOrders() {
     if (filter.salesmanId) params.append('salesmanId', filter.salesmanId);
     if (filter.startDate) params.append('startDate', filter.startDate);
     if (filter.endDate) params.append('endDate', filter.endDate);
-    api.get(`/orders?${params}`).then(({ data }) => setOrders(data.orders));
+    api.get(`/orders?${params}`).then(({ data }) => setOrders(data.orders)).catch(() => {});
   };
 
-  useEffect(() => {
-    api.get('/owner/team').then(({ data }) => setTeam(data.team.filter((m) => m.role === 'salesman')));
-    load();
-  }, []);
-
+  useEffect(() => { load(); }, []);
   useEffect(() => { load(); }, [filter]);
+
+  // Extract unique salesmen from orders for the filter dropdown
+  const salesmen = [...new Map(orders.map((o) => [o.salesmanId, { uid: o.salesmanId, name: o.salesmanName }])).values()];
 
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-700',
@@ -30,14 +34,19 @@ export default function AccountantOrders() {
     cancelled: 'bg-red-100 text-red-700',
   };
 
+  const totalValue = orders.filter((o) => o.status !== 'cancelled').reduce((s, o) => s + (o.totalValue || 0), 0);
+
   return (
     <AccountantLayout>
-      <h1 className="text-xl font-bold mb-4">Orders</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold">Orders</h1>
+        <p className="text-sm text-gray-500">Total: ₹{totalValue.toFixed(0)}</p>
+      </div>
 
       <div className="card mb-4 space-y-3">
         <select className="input" value={filter.salesmanId} onChange={(e) => setFilter({ ...filter, salesmanId: e.target.value })}>
           <option value="">All Salesmen</option>
-          {team.map((m) => <option key={m.uid} value={m.uid}>{m.name}</option>)}
+          {salesmen.map((m) => <option key={m.uid} value={m.uid}>{m.name}</option>)}
         </select>
         <div className="flex gap-2">
           <input className="input" type="date" value={filter.startDate} onChange={(e) => setFilter({ ...filter, startDate: e.target.value })} />
@@ -55,10 +64,8 @@ export default function AccountantOrders() {
               </div>
               <span className={`badge ${statusColors[o.status]}`}>{o.status}</span>
             </div>
-            <p className="text-sm text-gray-600">₹{o.totalValue.toFixed(2)}</p>
-            <p className="text-xs text-gray-400 mt-1">
-              {o.createdAt?.toDate ? format(o.createdAt.toDate(), 'PPp') : ''}
-            </p>
+            <p className="text-sm text-gray-600">₹{o.totalValue?.toFixed(2)}</p>
+            <p className="text-xs text-gray-400 mt-1">{formatDate(o.createdAt)}</p>
           </div>
         ))}
         {orders.length === 0 && <p className="text-gray-500 text-center py-8">No orders found</p>}

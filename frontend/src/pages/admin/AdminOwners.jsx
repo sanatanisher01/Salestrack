@@ -14,6 +14,10 @@ export default function AdminOwners() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (form.password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
     setLoading(true);
     try {
       await api.post('/admin/owners', form);
@@ -29,8 +33,12 @@ export default function AdminOwners() {
   };
 
   const toggle = async (uid, isActive) => {
-    await api.patch(`/admin/owners/${uid}/${isActive ? 'deactivate' : 'activate'}`);
-    load();
+    try {
+      await api.patch(`/admin/owners/${uid}/${isActive ? 'deactivate' : 'activate'}`);
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed');
+    }
   };
 
   return (
@@ -45,7 +53,7 @@ export default function AdminOwners() {
           <h2 className="font-semibold">New Owner</h2>
           <input className="input" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           <input className="input" type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-          <input className="input" type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+          <input className="input" type="password" placeholder="Password (min 8 chars)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
           <div className="flex gap-2">
             <button type="submit" disabled={loading} className="btn-primary">{loading ? 'Creating...' : 'Create'}</button>
             <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>

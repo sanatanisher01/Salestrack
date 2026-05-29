@@ -22,7 +22,12 @@ function salesmanIcon(name, color, isSelected) {
 
 function MapRecenter({ lat, lng }) {
   const map = useMap();
-  useEffect(() => { map.setView([lat, lng], map.getZoom()); }, [lat, lng]);
+  const centered = useRef(false);
+  useEffect(() => {
+    if (centered.current) return;
+    map.setView([lat, lng], 12);
+    centered.current = true;
+  }, [lat, lng]);
   return null;
 }
 
@@ -52,7 +57,7 @@ export default function AdminMap() {
       } catch {}
     };
     fetchLive();
-    intervalRef.current = setInterval(fetchLive, 5000);
+    intervalRef.current = setInterval(fetchLive, 15000);
     return () => clearInterval(intervalRef.current);
   }, []);
 
@@ -83,7 +88,7 @@ export default function AdminMap() {
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-semibold text-gray-500">Live · every 5s</span>
+          <span className="text-xs font-semibold text-gray-500">Live · every 15s</span>
         </div>
       </div>
 

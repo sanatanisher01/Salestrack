@@ -26,6 +26,10 @@ export default function OwnerProfile() {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
+    if (form.newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters');
+      return;
+    }
     setLoading(true);
     try {
       await api.post('/auth/change-password', form);
@@ -94,7 +98,7 @@ export default function OwnerProfile() {
           {changing && (
             <form onSubmit={handleChangePassword} className="mt-4 space-y-3 pt-4 border-t border-gray-50">
               <input className="input" type="password" placeholder="Current password" value={form.currentPassword} onChange={(e) => setForm({ ...form, currentPassword: e.target.value })} required />
-              <input className="input" type="password" placeholder="New password" value={form.newPassword} onChange={(e) => setForm({ ...form, newPassword: e.target.value })} required />
+              <input className="input" type="password" placeholder="New password (min 8 chars)" value={form.newPassword} onChange={(e) => setForm({ ...form, newPassword: e.target.value })} required minLength={8} />
               <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Saving...' : 'Update Password'}</button>
             </form>
           )}
