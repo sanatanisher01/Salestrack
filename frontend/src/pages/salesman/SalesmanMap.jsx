@@ -36,6 +36,36 @@ function MapController({ position, shouldFollow }) {
   return null;
 }
 
+// Ping queue for offline resilience
+const PING_QUEUE_KEY = 'pending_pings';
+
+function getPendingPings() {
+  try { return JSON.parse(localStorage.getItem(PING_QUEUE_KEY) || '[]'); } catch { return []; }
+}
+
+function savePendingPings(pings) {
+  localStorage.setItem(PING_QUEUE_KEY, JSON.stringify(pings.slice(-50))); // Keep max 50
+}
+
+async function flushPendingPings() {
+  const pings = getPendingPings();
+  if (!pings.length) return;
+  const remaining = [];
+  for (const ping of pings) {
+    try {
+      await api.post('/location/ping', ping);
+    } catch (err) {
+      if (!err.response) remaining.push(ping); // Keep only network failures
+    }
+  }
+  savePendingPings(remaining);
+}
+
+// Flush on reconnect
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', flushPendingPings);
+}
+
 export default function SalesmanMap() {
   const { user } = useAuthStore();
   const [position, setPosition] = useState(null);
@@ -44,24 +74,27 @@ export default function SalesmanMap() {
   const [loading, setLoading] = useState(false);
   const [speed, setSpeed] = useState(null);
   const [trail, setTrail] = useState([]);
-  const [followMode, setFollowMode] = useState(true); // auto-follow GPS
+  const [followMode, setFollowMode] = useState(true);
   const dutyWatchRef = useRef(null);
   const trailIntervalRef = useRef(null);
   const trailRef = useRef([]);
   const mapRef = useRef(null);
   const MIN_DISTANCE = 5; // meters
+  const lastPingTimeRef = useRef(0);
+  const MIN_PING_INTERVAL = 5000; // Don't ping more than once per 5 seconds
 
   useEffect(() => {
     api.get('/salesman/duty/status').then(({ data }) => {
       setDutyStatus(data.dutyStatus);
       if (data.dutyStatus === 'on') {
         fetchTrailFromDB();
-        startDutyTracking(); // Start tracking if already on duty
+        startDutyTracking();
         startTrailPolling();
+        flushPendingPings(); // Send any queued pings
       }
     }).catch(() => {});
 
-    // GPS watcher for display only (position dot on map)
+    // GPS watcher for display (position dot)
     if (!navigator.geolocation) return;
     const id = navigator.geolocation.watchPosition(
       ({ coords }) => {
@@ -70,7 +103,7 @@ export default function SalesmanMap() {
         setSpeed(coords.speed ? Math.round(coords.speed * 3.6) : null);
       },
       () => {},
-      { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
     );
     return () => {
       navigator.geolocation.clearWatch(id);
@@ -97,13 +130,35 @@ export default function SalesmanMap() {
     if (trailIntervalRef.current) { clearInterval(trailIntervalRef.current); trailIntervalRef.current = null; }
   };
 
+  const sendPing = async (lat, lng, acc) => {
+    const ping = { lat, lng, accuracy: acc };
+    try {
+      if (!navigator.onLine) {
+        const pending = getPendingPings();
+        pending.push(ping);
+        savePendingPings(pending);
+        return;
+      }
+      await api.post('/location/ping', ping);
+    } catch (err) {
+      if (!err.response) {
+        // Network error — queue it
+        const pending = getPendingPings();
+        pending.push(ping);
+        savePendingPings(pending);
+      }
+    }
+  };
+
   const startDutyTracking = () => {
     if (!navigator.geolocation) return;
-    if (dutyWatchRef.current != null) return; // Already tracking
+    if (dutyWatchRef.current != null) return;
     dutyWatchRef.current = navigator.geolocation.watchPosition(
       ({ coords }) => {
         const newPos = [coords.latitude, coords.longitude];
         const last = trailRef.current[trailRef.current.length - 1];
+
+        // Check minimum distance
         if (last) {
           const dist = Math.sqrt(
             Math.pow((newPos[0] - last[0]) * 111000, 2) +
@@ -111,12 +166,26 @@ export default function SalesmanMap() {
           );
           if (dist < MIN_DISTANCE) return;
         }
+
+        // Throttle pings (max 1 per 5 seconds)
+        const now = Date.now();
+        if (now - lastPingTimeRef.current < MIN_PING_INTERVAL) {
+          // Still update local trail for smooth line
+          trailRef.current = [...trailRef.current, newPos];
+          setTrail([...trailRef.current]);
+          return;
+        }
+        lastPingTimeRef.current = now;
+
+        // Update local trail immediately (instant line on salesman's map)
         trailRef.current = [...trailRef.current, newPos];
         setTrail([...trailRef.current]);
-        api.post('/location/ping', { lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy }).catch(() => {});
+
+        // Send to server (with offline buffering)
+        sendPing(coords.latitude, coords.longitude, coords.accuracy);
       },
       () => {},
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
     );
   };
 
@@ -139,6 +208,8 @@ export default function SalesmanMap() {
         startTrailPolling();
         toast.success('Duty started!');
       } else {
+        // Flush any pending pings before stopping
+        await flushPendingPings();
         stopDutyTracking();
         stopTrailPolling();
         await api.post('/salesman/duty/stop');
@@ -172,7 +243,6 @@ export default function SalesmanMap() {
           attributionControl={false}
           ref={mapRef}
           whenReady={(map) => {
-            // Disable follow when user drags
             map.target.on('dragstart', () => setFollowMode(false));
           }}
         >

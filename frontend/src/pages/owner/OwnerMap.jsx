@@ -4,7 +4,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useAuthStore } from '../../store/authStore';
 import OwnerLayout from '../../layouts/OwnerLayout';
-import api from '../../api/axios';
+import { db } from '../../lib/firebase';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 
 const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#f97316'];
 
@@ -36,9 +37,9 @@ function MapFit({ live }) {
   useEffect(() => {
     if (fitted.current || live.length === 0) return;
     if (live.length === 1) {
-      map.setView([live[0].liveLocation.lat, live[0].liveLocation.lng], 15);
+      map.setView([live[0].lat, live[0].lng], 15);
     } else {
-      const bounds = live.map((s) => [s.liveLocation.lat, s.liveLocation.lng]);
+      const bounds = live.map((s) => [s.lat, s.lng]);
       map.fitBounds(bounds, { padding: [60, 60] });
     }
     fitted.current = true;
@@ -47,61 +48,101 @@ function MapFit({ live }) {
 }
 
 export default function OwnerMap() {
-  const { user } = useAuthStore();
-  const [salesmen, setSalesmen] = useState([]);
+  const { user, firebaseReady } = useAuthStore();
+  const [salesmen, setSalesmen] = useState([]); // { uid, name, email, phone, lat, lng, address }
+  const [trails, setTrails] = useState({}); // uid -> [[lat,lng], ...]
   const [selected, setSelected] = useState(null);
-  const [trails, setTrails] = useState({});
   const [panel, setPanel] = useState(null);
   const [showList, setShowList] = useState(false);
-  const liveInterval = useRef(null);
-  const trailInterval = useRef(null);
 
-  // Use the direct trail endpoint (single API call per salesman)
-  const fetchTrail = async (uid) => {
-    try {
-      const { data } = await api.get(`/location/trail/${uid}`);
-      setTrails((p) => ({ ...p, [uid]: data.trail }));
-    } catch {
-      setTrails((p) => ({ ...p, [uid]: [] }));
-    }
-  };
-
+  // Real-time listener for salesman positions
   useEffect(() => {
-    const fetchLive = async () => {
-      try {
-        const { data } = await api.get('/location/live');
-        const live = data.live.filter((s) => s.liveLocation?.lat && s.liveLocation?.lng);
-        setSalesmen(live);
-        setPanel((prev) => prev ? (live.find((s) => s.uid === prev.uid) || prev) : null);
-        // Only fetch trails for selected salesman or all if few
-        if (live.length <= 5) {
-          live.forEach((s) => fetchTrail(s.uid));
-        } else if (selected) {
-          fetchTrail(selected);
+    if (!firebaseReady || !user?.uid) return;
+
+    const q = query(
+      collection(db, 'users'),
+      where('ownerId', '==', user.uid),
+      where('role', '==', 'salesman')
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      const live = [];
+      snap.docs.forEach((doc) => {
+        const d = doc.data();
+        if (d.liveLocation?.lat && d.liveLocation?.lng && d.dutyStatus === 'on') {
+          live.push({
+            uid: doc.id,
+            name: d.name,
+            email: d.email,
+            phone: d.phone || '',
+            lat: d.liveLocation.lat,
+            lng: d.liveLocation.lng,
+            address: d.liveLocation.address || null,
+            activeSessionId: d.activeSessionId,
+          });
         }
-      } catch {}
-    };
-    fetchLive();
-    liveInterval.current = setInterval(fetchLive, 10000);
-    return () => clearInterval(liveInterval.current);
-  }, [user.uid, selected]);
+      });
+      setSalesmen(live);
+      setPanel((prev) => prev ? (live.find((s) => s.uid === prev.uid) || prev) : null);
+    }, (err) => {
+      console.error('Live location listener error:', err);
+    });
 
+    return () => unsub();
+  }, [firebaseReady, user?.uid]);
+
+  // Real-time trail listener for selected salesman
   useEffect(() => {
-    if (trailInterval.current) clearInterval(trailInterval.current);
-    if (!selected) return;
-    fetchTrail(selected);
-    trailInterval.current = setInterval(() => fetchTrail(selected), 15000);
-    return () => clearInterval(trailInterval.current);
-  }, [selected]);
+    if (!firebaseReady || !selected) return;
+    const salesman = salesmen.find((s) => s.uid === selected);
+    if (!salesman?.activeSessionId) return;
+
+    const q = query(
+      collection(db, 'locationPings'),
+      where('sessionId', '==', salesman.activeSessionId)
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      const points = snap.docs
+        .map((doc) => doc.data())
+        .sort((a, b) => {
+          const ta = a.timestamp?.toMillis?.() || a.timestamp?.seconds * 1000 || 0;
+          const tb = b.timestamp?.toMillis?.() || b.timestamp?.seconds * 1000 || 0;
+          return ta - tb;
+        })
+        .map((p) => [p.lat, p.lng]);
+      setTrails((prev) => ({ ...prev, [selected]: points }));
+    }, (err) => {
+      console.error('Trail listener error:', err);
+    });
+
+    return () => unsub();
+  }, [firebaseReady, selected, salesmen]);
+
+  // For non-selected salesmen, extend trail with their live position
+  const getTrailWithLive = (uid) => {
+    const trail = trails[uid] || [];
+    const salesman = salesmen.find((s) => s.uid === uid);
+    if (!salesman) return trail;
+    const lastPoint = trail[trail.length - 1];
+    const livePoint = [salesman.lat, salesman.lng];
+    // Add live position if it's different from last trail point
+    if (lastPoint && (lastPoint[0] !== livePoint[0] || lastPoint[1] !== livePoint[1])) {
+      return [...trail, livePoint];
+    }
+    return trail.length > 0 ? trail : [livePoint];
+  };
 
   const selectSalesman = (s) => {
     setSelected(s.uid);
     setPanel(s);
     setShowList(false);
-    fetchTrail(s.uid);
   };
 
   const clearSelection = () => { setSelected(null); setPanel(null); };
+
+  // Prepare live data for MapFit
+  const liveForFit = salesmen.map((s) => ({ lat: s.lat, lng: s.lng }));
 
   return (
     <OwnerLayout>
@@ -114,11 +155,11 @@ export default function OwnerMap() {
           attributionControl={false}
         >
           <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
-          <MapFit live={salesmen} />
+          <MapFit live={liveForFit} />
 
           {salesmen.map((s, i) => {
             const color = COLORS[i % COLORS.length];
-            const trail = trails[s.uid] || [];
+            const trail = getTrailWithLive(s.uid);
             return (
               <span key={s.uid}>
                 {trail.length > 1 && (
@@ -128,7 +169,7 @@ export default function OwnerMap() {
                   </>
                 )}
                 <Marker
-                  position={[s.liveLocation.lat, s.liveLocation.lng]}
+                  position={[s.lat, s.lng]}
                   icon={markerIcon(s.name, color, selected === s.uid)}
                   eventHandlers={{ click: () => selectSalesman(s) }}
                 />
@@ -144,7 +185,7 @@ export default function OwnerMap() {
             <div className="min-w-0">
               <p className="text-sm font-bold text-gray-900 leading-tight">Live Map</p>
               <p className="text-[10px] text-gray-500 font-medium">
-                {salesmen.length} salesman{salesmen.length !== 1 ? 'en' : ''} on duty
+                {salesmen.length} salesman{salesmen.length !== 1 ? 'en' : ''} on duty · real-time
               </p>
             </div>
           </div>
@@ -215,7 +256,7 @@ export default function OwnerMap() {
               <div className="bg-indigo-50 rounded-2xl px-3 py-2.5">
                 <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wide mb-0.5">Current Location</p>
                 <p className="text-xs text-indigo-900 leading-relaxed">
-                  {panel.liveLocation?.address || 'Waiting for location ping...'}
+                  {panel.address || 'Waiting for location ping...'}
                 </p>
               </div>
             </div>

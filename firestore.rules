@@ -24,14 +24,18 @@ service cloud.firestore {
     }
 
     match /dutySessions/{sessionId} {
-      allow read: if request.auth != null &&
-        resource.data.ownerId == request.auth.uid;
+      allow read: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        resource.data.salesmanId == request.auth.uid
+      );
       allow write: if false;
     }
 
     match /locationPings/{pingId} {
-      allow read: if request.auth != null &&
-        resource.data.ownerId == request.auth.uid;
+      allow read: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        resource.data.salesmanId == request.auth.uid
+      );
       allow write: if false;
     }
 
