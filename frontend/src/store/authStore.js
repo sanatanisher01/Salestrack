@@ -8,10 +8,11 @@ let refreshTimer = null;
 
 function scheduleRefresh(get) {
   if (refreshTimer) clearInterval(refreshTimer);
-  // Refresh every 45 minutes (token expires in 1 hour)
   refreshTimer = setInterval(async () => {
-    const { token } = get();
+    const { token, user } = get();
     if (!token) return;
+    // Don't refresh for customers (they use Firebase auth directly)
+    if (user?.role === 'customer') return;
     try {
       const { data } = await api.post('/auth/refresh');
       get().setToken(data.token, data.user);
@@ -40,6 +41,12 @@ export const useAuthStore = create(
 
       initFirebase: async () => {
         try {
+          const { user } = get();
+          // Customers are already signed into Firebase via Google
+          if (user?.role === 'customer') {
+            set({ firebaseReady: true });
+            return;
+          }
           const { data } = await api.get('/auth/firebase-token');
           await signInToFirebase(data.customToken);
           set({ firebaseReady: true });
@@ -60,9 +67,15 @@ export const useAuthStore = create(
         const { token, user } = get();
         if (!token || !user) return;
         try {
-          const { data } = await api.get('/auth/me');
-          set({ user: data });
-          await get().initFirebase();
+          if (user.role === 'customer') {
+            // For customers, verify via customer endpoint
+            const { data } = await api.get('/customer/me');
+            set({ user: { uid: data.uid, name: data.shopName || data.ownerName, email: data.email, role: 'customer' }, firebaseReady: true });
+          } else {
+            const { data } = await api.get('/auth/me');
+            set({ user: data });
+            await get().initFirebase();
+          }
           scheduleRefresh(get);
         } catch {
           set({ user: null, token: null, firebaseReady: false });
