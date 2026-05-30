@@ -23,6 +23,7 @@ import OwnerHistory from './pages/owner/OwnerHistory';
 import OwnerProfile from './pages/owner/OwnerProfile';
 import OwnerInventory from './pages/owner/OwnerInventory';
 import OwnerCustomers from './pages/owner/OwnerCustomers';
+import OwnerLedger from './pages/owner/OwnerLedger';
 import SalesmanDashboard from './pages/salesman/SalesmanDashboard';
 import SalesmanMap from './pages/salesman/SalesmanMap';
 import SalesmanOrders from './pages/salesman/SalesmanOrders';
@@ -59,6 +60,7 @@ export default function App() {
         <Route path="/owner/history" element={<ProtectedRoute role="owner"><OwnerHistory /></ProtectedRoute>} />
         <Route path="/owner/inventory" element={<ProtectedRoute role="owner"><OwnerInventory /></ProtectedRoute>} />
         <Route path="/owner/customers" element={<ProtectedRoute role="owner"><OwnerCustomers /></ProtectedRoute>} />
+        <Route path="/owner/ledger" element={<ProtectedRoute role="owner"><OwnerLedger /></ProtectedRoute>} />
         <Route path="/owner/profile" element={<ProtectedRoute role="owner"><OwnerProfile /></ProtectedRoute>} />
 
         <Route path="/salesman" element={<ProtectedRoute role="salesman"><SalesmanDashboard /></ProtectedRoute>} />

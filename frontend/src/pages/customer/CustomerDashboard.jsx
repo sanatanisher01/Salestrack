@@ -6,7 +6,7 @@ import api from '../../api/axios';
 
 export default function CustomerDashboard() {
   const { user } = useAuthStore();
-  const [stats, setStats] = useState({ orders: 0, pending: 0, delivered: 0, products: 0 });
+  const [stats, setStats] = useState({ orders: 0, pending: 0, delivered: 0, products: 0, balance: 0, totalPaid: 0 });
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -15,7 +15,8 @@ export default function CustomerDashboard() {
       api.get('/customer/me').catch(() => ({ data: null })),
       api.get('/customer/orders').catch(() => ({ data: { orders: [] } })),
       api.get('/customer/products').catch(() => ({ data: { products: [] } })),
-    ]).then(([me, orders, products]) => {
+      api.get('/payments/me').catch(() => ({ data: { balance: 0, totalPaid: 0 } })),
+    ]).then(([me, orders, products, payments]) => {
       setCustomer(me.data);
       const o = orders.data.orders;
       setStats({
@@ -23,6 +24,8 @@ export default function CustomerDashboard() {
         pending: o.filter((x) => x.status === 'pending' || x.status === 'confirmed').length,
         delivered: o.filter((x) => x.status === 'delivered').length,
         products: products.data.products.length,
+        balance: payments.data.balance || 0,
+        totalPaid: payments.data.totalPaid || 0,
       });
     }).finally(() => setLoading(false));
   }, []);
@@ -61,6 +64,22 @@ export default function CustomerDashboard() {
           </div>
         ))}
       </div>
+
+      {/* Payment balance */}
+      {stats.balance > 0 && (
+        <div className="bg-gradient-to-br from-red-50 to-red-100/50 rounded-3xl p-4 border border-red-100 mb-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-red-400 uppercase tracking-wide">Pending Balance</p>
+              <p className="text-2xl font-bold text-red-600 mt-1">₹{stats.balance.toFixed(0)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-400">Total Paid</p>
+              <p className="text-sm font-semibold text-emerald-600">₹{stats.totalPaid.toFixed(0)}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Quick Actions</p>
