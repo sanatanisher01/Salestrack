@@ -30,8 +30,8 @@ export const useAuthStore = create(
 
       setToken: (token, user) => set({ token, user }),
 
-      login: async (email, password, recaptchaToken) => {
-        const { data } = await api.post('/auth/login', { email, password, recaptchaToken });
+      login: async (email, password) => {
+        const { data } = await api.post('/auth/login', { email, password });
         set({ user: data.user, token: data.token });
         await get().initFirebase();
         scheduleRefresh(get);

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
-import { getRecaptchaToken } from '../utils/recaptcha';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -16,8 +15,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const recaptchaToken = await getRecaptchaToken('LOGIN');
-      const user = await login(email, password, recaptchaToken);
+      const user = await login(email, password);
       const routes = { admin: '/admin', owner: '/owner', salesman: '/salesman', accountant: '/accountant' };
       navigate(routes[user.role] || '/');
     } catch (err) {
