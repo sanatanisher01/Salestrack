@@ -18,17 +18,23 @@ export default function CustomerRegister() {
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
         const loc = { lat: coords.latitude, lng: coords.longitude, address: '' };
-        // Try reverse geocode
+        // Try reverse geocode (non-blocking)
         try {
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`, { headers: { 'User-Agent': 'SalesTrack/1.0' } });
-          const data = await res.json();
-          loc.address = data.display_name || '';
+          if (res.ok) {
+            const data = await res.json();
+            loc.address = data.display_name || '';
+          }
         } catch {}
         setShopLocation(loc);
         setLocating(false);
-        toast.success('Shop location saved!');
+        toast.success(`Location saved! (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`);
       },
-      () => { setLocating(false); toast.error('Could not get location. Enable GPS.'); },
+      (err) => {
+        setLocating(false);
+        if (err.code === 1) toast.error('Location permission denied. Please allow location access.');
+        else toast.error('Could not get location. Make sure GPS is on.');
+      },
       { enableHighAccuracy: true, timeout: 15000 }
     );
   };
@@ -37,7 +43,20 @@ export default function CustomerRegister() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await api.post('/customer/register', { ...form, shopLocation });
+      // If no location mapped, try to get it now
+      let locationToSend = shopLocation;
+      if (!locationToSend && navigator.geolocation) {
+        try {
+          const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 5000 });
+          });
+          locationToSend = { lat: pos.coords.latitude, lng: pos.coords.longitude, address: '' };
+        } catch {}
+      }
+
+      const payload = { ...form, shopLocation: locationToSend };
+      console.log('Registering customer with:', payload);
+      const { data } = await api.post('/customer/register', payload);
       setToken(useAuthStore.getState().token, { uid: data.customer.uid, name: data.customer.shopName, email: data.customer.email, role: 'customer' });
       toast.success('Registration complete!');
       navigate('/customer');
