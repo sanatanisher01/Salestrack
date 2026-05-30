@@ -1,4 +1,4 @@
-const CACHE = 'salestrack-v3';
+const CACHE = 'JDM-v3';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -40,7 +40,7 @@ function startBackgroundTracking() {
   if (trackingInterval) return;
 
   // Show persistent notification (ongoing-style)
-  self.registration.showNotification('SalesTrack - On Duty', {
+  self.registration.showNotification('JDM - On Duty', {
     body: 'Location tracking is active. Tap to open app.',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
@@ -69,7 +69,7 @@ function startBackgroundTracking() {
 
   // Re-show notification periodically to prevent Android from killing SW
   self.keepAliveInterval = setInterval(() => {
-    self.registration.showNotification('SalesTrack - On Duty', {
+    self.registration.showNotification('JDM - On Duty', {
       body: 'Location tracking is active. Tap to open app.',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
@@ -162,7 +162,7 @@ self.addEventListener('fetch', (e) => {
 
 // Push notifications (non-tracking)
 self.addEventListener('push', (e) => {
-  let data = { title: 'SalesTrack', body: 'New notification' };
+  let data = { title: 'JDM', body: 'New notification' };
   try { data = e.data.json(); } catch {}
   e.waitUntil(
     self.registration.showNotification(data.title, {

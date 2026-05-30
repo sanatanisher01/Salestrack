@@ -333,7 +333,7 @@ export default function SalesmanMap() {
             </div>
             <h2 className="text-lg font-bold text-gray-900 mb-2">Location Required</h2>
             <p className="text-sm text-gray-500 mb-4">
-              SalesTrack needs your location to track your movement while on duty. Please enable location access.
+              JDM needs your location to track your movement while on duty. Please enable location access.
             </p>
             <div className="space-y-2">
               <button onClick={requestLocationPermission}

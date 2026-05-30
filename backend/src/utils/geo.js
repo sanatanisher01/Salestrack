@@ -14,7 +14,7 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
 function reverseGeocode(lat, lng) {
   return new Promise((resolve) => {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
-    https.get(url, { headers: { 'User-Agent': 'SalesTrack/1.0' } }, (res) => {
+    https.get(url, { headers: { 'User-Agent': 'JDM/1.0' } }, (res) => {
       let data = '';
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {

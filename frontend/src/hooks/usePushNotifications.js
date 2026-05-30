@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import api from '../api/axios';
 
-const SUBSCRIBED_KEY = 'salestrack-push-subscribed';
+const SUBSCRIBED_KEY = 'JDM-push-subscribed';
 
 export function usePushNotifications() {
   const attempted = useRef(false);

@@ -60,7 +60,7 @@ export const useAuthStore = create(
         try { await api.post('/auth/logout'); } catch {}
         try { await signOut(auth); } catch {}
         set({ user: null, token: null, firebaseReady: false });
-        sessionStorage.removeItem('salestrack-push-subscribed');
+        sessionStorage.removeItem('JDM-push-subscribed');
       },
 
       hydrate: async () => {
@@ -88,6 +88,6 @@ export const useAuthStore = create(
         }
       },
     }),
-    { name: 'salestrack-auth', partialize: (s) => ({ token: s.token, user: s.user }) }
+    { name: 'JDM-auth', partialize: (s) => ({ token: s.token, user: s.user }) }
   )
 );

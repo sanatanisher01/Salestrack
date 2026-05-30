@@ -39,7 +39,7 @@ export default function InstallBanner() {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm text-gray-900">Install SalesTrack</p>
+            <p className="font-bold text-sm text-gray-900">Install JDM</p>
             <p className="text-xs text-gray-400">Add to home screen for quick access</p>
           </div>
           <div className="flex flex-col gap-1.5 flex-shrink-0">
@@ -64,7 +64,7 @@ export default function InstallBanner() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             </div>
-            <h2 className="text-lg font-bold text-gray-900 text-center mb-1">Install SalesTrack</h2>
+            <h2 className="text-lg font-bold text-gray-900 text-center mb-1">Install JDM</h2>
 
             {isIOS ? (
               <div className="space-y-3 mt-4">

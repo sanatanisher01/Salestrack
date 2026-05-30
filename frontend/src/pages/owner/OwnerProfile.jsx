@@ -95,7 +95,7 @@ export default function OwnerProfile() {
             </div>
             <div>
               <p className="font-semibold text-sm text-emerald-700">App Installed</p>
-              <p className="text-xs text-gray-400">SalesTrack is on your home screen</p>
+              <p className="text-xs text-gray-400">JDM is on your home screen</p>
             </div>
           </div>
         ) : (
@@ -106,7 +106,7 @@ export default function OwnerProfile() {
             </div>
             <div className="text-left">
               <p className="font-semibold text-sm text-indigo-700">Install App</p>
-              <p className="text-xs text-gray-400">Add SalesTrack to your home screen</p>
+              <p className="text-xs text-gray-400">Add JDM to your home screen</p>
             </div>
           </button>
         )}

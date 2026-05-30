@@ -1,7 +1,7 @@
 {
-  "name": "SalesTrack",
-  "short_name": "SalesTrack",
-  "description": "Sales force management app",
+  "name": "JDM",
+  "short_name": "JDM",
+  "description": "JDM - Jai Durga Maa Sales Management",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f5f6fa",

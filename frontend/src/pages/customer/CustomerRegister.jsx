@@ -20,7 +20,7 @@ export default function CustomerRegister() {
         const loc = { lat: coords.latitude, lng: coords.longitude, address: '' };
         // Try reverse geocode (non-blocking)
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`, { headers: { 'User-Agent': 'SalesTrack/1.0' } });
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`, { headers: { 'User-Agent': 'JDM/1.0' } });
           if (res.ok) {
             const data = await res.json();
             loc.address = data.display_name || '';

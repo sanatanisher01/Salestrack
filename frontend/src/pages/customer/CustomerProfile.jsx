@@ -23,7 +23,7 @@ export default function CustomerProfile() {
       async ({ coords }) => {
         let address = '';
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`, { headers: { 'User-Agent': 'SalesTrack/1.0' } });
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`, { headers: { 'User-Agent': 'JDM/1.0' } });
           if (res.ok) { const data = await res.json(); address = data.display_name || ''; }
         } catch {}
         try {

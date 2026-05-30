@@ -24,12 +24,8 @@ export default function AdminLayout({ children }) {
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                </svg>
-              </div>
-              <span className="font-bold text-gray-900 text-base tracking-tight">SalesTrack</span>
+              <img src="/jdm-logo.png" alt="JDM" className="w-7 h-7 rounded-lg object-contain" />
+              <span className="font-bold text-gray-900 text-base tracking-tight">JDM</span>
               <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Admin</span>
             </div>
             <nav className="hidden sm:flex items-center gap-1">
