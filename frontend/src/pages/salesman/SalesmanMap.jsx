@@ -63,6 +63,7 @@ export default function SalesmanMap() {
   const [speed, setSpeed] = useState(null);
   const [trail, setTrail] = useState([]);
   const [followMode, setFollowMode] = useState(true);
+  const [locationBlocked, setLocationBlocked] = useState(false); // true if permission denied or unavailable
   const dutyWatchRef = useRef(null);
   const trailIntervalRef = useRef(null);
   const trailRef = useRef([]);
@@ -70,6 +71,51 @@ export default function SalesmanMap() {
   const MIN_DISTANCE = 5;
   const lastPingTimeRef = useRef(0);
   const MIN_PING_INTERVAL = 5000;
+
+  // Check location permission on mount
+  useEffect(() => {
+    checkLocationPermission();
+  }, []);
+
+  const checkLocationPermission = async () => {
+    if (!navigator.geolocation) {
+      setLocationBlocked(true);
+      return;
+    }
+    // Check permission state if API available
+    if (navigator.permissions) {
+      try {
+        const result = await navigator.permissions.query({ name: 'geolocation' });
+        if (result.state === 'denied') {
+          setLocationBlocked(true);
+          return;
+        }
+        result.addEventListener('change', () => {
+          setLocationBlocked(result.state === 'denied');
+        });
+      } catch {}
+    }
+    // Try to get a position to trigger the permission prompt
+    navigator.geolocation.getCurrentPosition(
+      () => setLocationBlocked(false),
+      (err) => {
+        if (err.code === 1) setLocationBlocked(true); // PERMISSION_DENIED
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const requestLocationPermission = () => {
+    navigator.geolocation.getCurrentPosition(
+      () => { setLocationBlocked(false); toast.success('Location enabled!'); },
+      (err) => {
+        if (err.code === 1) {
+          toast.error('Location permission denied. Please enable it in your browser/phone settings.');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   // Listen for SW messages (e.g., "End Duty" from notification)
   useEffect(() => {
@@ -220,6 +266,32 @@ export default function SalesmanMap() {
   };
 
   const toggleDuty = async () => {
+    // Block duty start if location not available
+    if (dutyStatus === 'off') {
+      if (!navigator.geolocation) {
+        toast.error('Location is not supported on this device');
+        return;
+      }
+      // Check permission before starting
+      const permitted = await new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          () => resolve(true),
+          (err) => {
+            if (err.code === 1) {
+              setLocationBlocked(true);
+              toast.error('Please enable location permission to start duty');
+            } else {
+              toast.error('Could not get location. Make sure GPS is turned on.');
+            }
+            resolve(false);
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      });
+      if (!permitted) return;
+      setLocationBlocked(false);
+    }
+
     setLoading(true);
     try {
       if (dutyStatus === 'off') {
@@ -249,6 +321,33 @@ export default function SalesmanMap() {
 
   return (
     <SalesmanLayout>
+      {/* Location permission blocker */}
+      {locationBlocked && (
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-xl p-6 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Location Required</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              SalesTrack needs your location to track your movement while on duty. Please enable location access.
+            </p>
+            <div className="space-y-2">
+              <button onClick={requestLocationPermission}
+                className="btn-primary w-full py-3">
+                Enable Location
+              </button>
+              <p className="text-xs text-gray-400">
+                If the button doesn't work, go to your phone's <strong>Settings → Apps → Chrome → Permissions → Location</strong> and set it to "Allow"
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="relative rounded-3xl overflow-hidden shadow-float" style={{ height: 'calc(100vh - 148px)' }}>
         <MapContainer
           center={position || [20.5937, 78.9629]}
