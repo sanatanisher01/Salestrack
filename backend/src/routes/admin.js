@@ -90,6 +90,25 @@ router.patch('/owners/:uid/unblock', async (req, res) => {
   }
 });
 
+router.patch('/owners/:uid/reset-password', async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+
+    const db = getDb();
+    const doc = await db.collection('users').doc(req.params.uid).get();
+    if (!doc.exists || doc.data().role !== 'owner') return res.status(404).json({ error: 'Not found' });
+
+    const passwordHash = await hashPassword(newPassword);
+    await doc.ref.update({ passwordHash, failedLoginAttempts: 0, lockedUntil: null, updatedAt: new Date() });
+    clearUserCache(req.params.uid);
+    res.json({ message: 'Password reset successfully' });
+  } catch (err) {
+    console.error('Admin reset password error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.get('/live', async (req, res) => {
   try {
     const db = getDb();

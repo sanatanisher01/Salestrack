@@ -88,6 +88,8 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
+          <p className="text-center text-xs text-gray-400 mt-3">Forgot password? Contact your owner/admin to reset it.</p>
+
           {/* Customer login link */}
           <Link to="/customer/login"
             className="mt-4 w-full flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-emerald-300 rounded-2xl py-3 px-4 font-semibold text-gray-700 transition-all hover:shadow-md active:scale-[0.98]">

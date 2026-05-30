@@ -10,6 +10,8 @@ export default function OwnerTeam() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [resetPassModal, setResetPassModal] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
 
   const load = () => api.get('/owner/team').then(({ data }) => setTeam(data.team));
   useEffect(() => { load(); }, []);
@@ -53,6 +55,18 @@ export default function OwnerTeam() {
       load();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to delete');
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword || newPassword.length < 8) { toast.error('Password must be at least 8 characters'); return; }
+    try {
+      await api.patch(`/owner/team/${resetPassModal.uid}/reset-password`, { newPassword });
+      toast.success('Password reset!');
+      setResetPassModal(null);
+      setNewPassword('');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed');
     }
   };
 
@@ -153,6 +167,12 @@ export default function OwnerTeam() {
                 {m.isActive ? 'Deactivate' : 'Activate'}
               </button>
               <button
+                onClick={() => setResetPassModal(m)}
+                className="text-xs px-2.5 py-1 rounded-lg font-medium bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+              >
+                Reset Pass
+              </button>
+              <button
                 onClick={() => setConfirmDelete(m)}
                 className="text-xs px-2.5 py-1 rounded-lg font-medium bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
               >
@@ -184,6 +204,27 @@ export default function OwnerTeam() {
             <div className="flex gap-3">
               <button onClick={() => setConfirmDelete(null)} className="btn-secondary flex-1">Cancel</button>
               <button onClick={() => handleDelete(confirmDelete.uid)} className="btn-danger flex-1">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Reset password modal */}
+      {resetPassModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-xl p-6">
+            <h2 className="text-lg font-bold text-gray-900 text-center mb-1">Reset Password</h2>
+            <p className="text-sm text-gray-500 text-center mb-4">Set new password for <strong>{resetPassModal.name}</strong></p>
+            <input
+              className="input mb-3"
+              type="password"
+              placeholder="New password (min 8 chars)"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              minLength={8}
+            />
+            <div className="flex gap-3">
+              <button onClick={() => { setResetPassModal(null); setNewPassword(''); }} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={handleResetPassword} className="btn-primary flex-1">Reset</button>
             </div>
           </div>
         </div>
