@@ -34,6 +34,11 @@ async function authenticate(req, res, next) {
         req.user = user;
         return next();
       }
+      // If JWT says role is customer but not yet registered — allow through for registration
+      if (payload.role === 'customer') {
+        req.user = { uid, role: 'customer', email: payload.email || '', name: payload.name || '', ownerId: null, isActive: true };
+        return next();
+      }
       userCache.delete(uid);
       return res.status(401).json({ error: 'User not found or inactive' });
     }

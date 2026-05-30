@@ -30,7 +30,7 @@ router.post('/auth/google', async (req, res) => {
     }
 
     // New customer — return token but mark as new (needs registration)
-    const token = generateToken({ uid, role: 'customer' });
+    const token = generateToken({ uid, role: 'customer', email, name });
     res.json({ token, customer: { uid, email, name, picture }, isNew: true });
   } catch (err) {
     console.error('Customer Google auth error:', err);
