@@ -14,6 +14,35 @@ export default function CustomerProfile() {
   const [showReport, setShowReport] = useState(false);
   const [report, setReport] = useState({ subject: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [locating, setLocating] = useState(false);
+
+  const updateShopLocation = () => {
+    if (!navigator.geolocation) { toast.error('Location not supported'); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        let address = '';
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`, { headers: { 'User-Agent': 'SalesTrack/1.0' } });
+          if (res.ok) { const data = await res.json(); address = data.display_name || ''; }
+        } catch {}
+        try {
+          await api.patch('/customer/location', { lat: coords.latitude, lng: coords.longitude, address });
+          setCustomer((prev) => prev ? { ...prev, shopLocation: { lat: coords.latitude, lng: coords.longitude, address } } : prev);
+          toast.success('Shop location updated!');
+        } catch (err) {
+          toast.error(err.response?.data?.error || 'Failed to update location');
+        }
+        setLocating(false);
+      },
+      (err) => {
+        setLocating(false);
+        if (err.code === 1) toast.error('Location permission denied');
+        else toast.error('Could not get location. Make sure GPS is on.');
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  };
 
   useEffect(() => {
     api.get('/customer/me').then(({ data }) => setCustomer(data)).catch(() => {});
@@ -76,8 +105,12 @@ export default function CustomerProfile() {
               <p><span className="text-gray-400">Owner:</span> <span className="text-gray-800 font-medium">{customer.ownerName}</span></p>
               {customer.gstin && <p><span className="text-gray-400">GSTIN:</span> <span className="text-gray-800 font-medium">{customer.gstin}</span></p>}
               {customer.category && <p><span className="text-gray-400">Category:</span> <span className="text-gray-800 font-medium capitalize">{customer.category}</span></p>}
-              {customer.shopLocation && <p><span className="text-gray-400">Location:</span> <span className="text-gray-800 font-medium">{customer.shopLocation.address || 'Mapped'}</span></p>}
+              {customer.shopLocation && <p><span className="text-gray-400">Location:</span> <span className="text-gray-800 font-medium">{customer.shopLocation.address || `${customer.shopLocation.lat?.toFixed(4)}, ${customer.shopLocation.lng?.toFixed(4)}`}</span></p>}
             </div>
+            <button onClick={updateShopLocation} disabled={locating}
+              className="mt-3 w-full py-2.5 rounded-xl border-2 border-dashed border-emerald-300 text-sm text-emerald-600 font-semibold hover:bg-emerald-50 transition-colors disabled:opacity-50">
+              {locating ? 'Getting location...' : customer.shopLocation ? '📍 Update Shop Location' : '📍 Map Your Shop'}
+            </button>
           </div>
         )}
 
