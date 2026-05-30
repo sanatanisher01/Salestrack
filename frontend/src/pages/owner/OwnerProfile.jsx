@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationStore } from '../../store/notificationStore';
 import api from '../../api/axios';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 import IOSInstallGuide from '../../components/IOSInstallGuide';
@@ -17,6 +17,37 @@ export default function OwnerProfile() {
   const [loading, setLoading] = useState(false);
   const [showIOS, setShowIOS] = useState(false);
   const { canInstall, isInstalled, isIOS, install } = useInstallPrompt();
+  const [customerCode, setCustomerCode] = useState('');
+  const [codeInput, setCodeInput] = useState('');
+  const [savingCode, setSavingCode] = useState(false);
+
+  useEffect(() => {
+    api.get('/owner/customer-code').then(({ data }) => setCustomerCode(data.code || '')).catch(() => {});
+  }, []);
+
+  const saveCustomerCode = async () => {
+    if (!codeInput.trim() || codeInput.trim().length < 4) {
+      toast.error('Code must be at least 4 characters');
+      return;
+    }
+    setSavingCode(true);
+    try {
+      const { data } = await api.post('/owner/customer-code', { code: codeInput.trim().toUpperCase() });
+      setCustomerCode(data.code);
+      setCodeInput('');
+      toast.success('Supplier code saved!');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed');
+    } finally {
+      setSavingCode(false);
+    }
+  };
+
+  const copyCode = () => {
+    const code = customerCode || user?.uid;
+    navigator.clipboard.writeText(code);
+    toast.success('Code copied!');
+  };
 
   const handleLogout = async () => {
     cleanup();
@@ -79,6 +110,48 @@ export default function OwnerProfile() {
             </div>
           </button>
         )}
+
+        {/* Supplier Code */}
+        <div className="card">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+              <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+            </div>
+            <div>
+              <p className="font-semibold text-sm text-gray-800">Supplier Code</p>
+              <p className="text-xs text-gray-400">Share this with your customers to link them</p>
+            </div>
+          </div>
+          {customerCode ? (
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-emerald-50 rounded-xl px-4 py-3 text-center">
+                <p className="text-lg font-bold text-emerald-700 tracking-widest">{customerCode}</p>
+              </div>
+              <button onClick={copyCode} className="px-3 py-3 rounded-xl bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs text-gray-500 mb-2">Your default code is your ID. Set a custom easy-to-share code:</p>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 text-center">
+                  <p className="text-xs text-gray-400">Default (your ID)</p>
+                  <p className="text-sm font-mono text-gray-600 truncate">{user?.uid}</p>
+                </div>
+                <button onClick={copyCode} className="px-3 py-3 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <input className="input flex-1" placeholder="e.g. ARYAN2024" value={codeInput} onChange={(e) => setCodeInput(e.target.value.toUpperCase())} maxLength={20} />
+                <button onClick={saveCustomerCode} disabled={savingCode} className="btn-primary px-4 text-sm">
+                  {savingCode ? '...' : 'Set'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Change password */}
         <div className="card">

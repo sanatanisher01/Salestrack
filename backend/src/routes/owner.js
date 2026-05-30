@@ -190,4 +190,39 @@ router.get('/stop-events', async (req, res) => {
   }
 });
 
+// --- Customer code ---
+router.get('/customer-code', async (req, res) => {
+  try {
+    const db = getDb();
+    const doc = await db.collection('users').doc(req.user.uid).get();
+    const code = doc.data()?.customerCode || '';
+    res.json({ code });
+  } catch (err) {
+    console.error('Get customer code error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/customer-code', async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code || code.trim().length < 4) return res.status(400).json({ error: 'Code must be at least 4 characters' });
+
+    const cleanCode = code.trim().toUpperCase();
+    const db = getDb();
+
+    // Check if code is already taken by another owner
+    const existing = await db.collection('users').where('customerCode', '==', cleanCode).get();
+    if (!existing.empty && existing.docs[0].id !== req.user.uid) {
+      return res.status(409).json({ error: 'This code is already taken. Try another.' });
+    }
+
+    await db.collection('users').doc(req.user.uid).update({ customerCode: cleanCode, updatedAt: new Date() });
+    res.json({ message: 'Code saved', code: cleanCode });
+  } catch (err) {
+    console.error('Set customer code error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
