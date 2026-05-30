@@ -19,6 +19,7 @@ export default function AccountantLayout({ children }) {
             <nav className="hidden sm:flex gap-3 text-sm">
               <Link to="/accountant" className="text-gray-600 hover:text-blue-600">Dashboard</Link>
               <Link to="/accountant/orders" className="text-gray-600 hover:text-blue-600">Orders</Link>
+              <Link to="/accountant/inventory" className="text-gray-600 hover:text-blue-600">Inventory</Link>
             </nav>
           </div>
           <div className="flex items-center gap-3">

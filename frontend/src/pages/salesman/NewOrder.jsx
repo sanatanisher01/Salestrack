@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SalesmanLayout from '../../layouts/SalesmanLayout';
 import api from '../../api/axios';
@@ -9,32 +9,67 @@ const QUEUE_KEY = 'order_queue';
 function generateLocalId() {
   return `local_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
-
 function saveToQueue(order) {
   const queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
   queue.push(order);
   localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
 }
-
 async function flushQueue() {
   const queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
   if (!queue.length) return;
   const remaining = [];
   for (const order of queue) {
-    try {
-      await api.post('/orders', order);
-    } catch (err) {
-      // Only keep in queue if it's a network error, not a validation error
-      if (!err.response) {
-        remaining.push(order);
-      }
-    }
+    try { await api.post('/orders', order); }
+    catch (err) { if (!err.response) remaining.push(order); }
   }
   localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining));
 }
+if (typeof window !== 'undefined') window.addEventListener('online', flushQueue);
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('online', flushQueue);
+function ProductSearch({ products, value, onChange, onSelect }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState(value);
+  const ref = useRef(null);
+
+  useEffect(() => { setSearch(value); }, [value]);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filtered = search
+    ? products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()) && p.isActive)
+    : products.filter((p) => p.isActive);
+
+  return (
+    <div className="relative" ref={ref}>
+      <input
+        className="input bg-white"
+        placeholder="Search or type product name *"
+        value={search}
+        onChange={(e) => { setSearch(e.target.value); onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        required
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto z-50">
+          {filtered.slice(0, 8).map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => { onSelect(p); setSearch(p.name); setOpen(false); }}
+              className="w-full text-left px-3 py-2 hover:bg-indigo-50 flex items-center justify-between text-sm"
+            >
+              <span className="font-medium text-gray-800">{p.name}</span>
+              <span className="text-xs text-gray-400">₹{p.price}/{p.unit}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function NewOrder() {
@@ -42,7 +77,12 @@ export default function NewOrder() {
   const [form, setForm] = useState({ customerName: '', customerPhone: '', note: '' });
   const [items, setItems] = useState([{ productName: '', quantity: 1, unitPrice: 0 }]);
   const [loading, setLoading] = useState(false);
-  const [submittedId, setSubmittedId] = useState(null); // Prevent double-submit
+  const [submittedId, setSubmittedId] = useState(null);
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    api.get('/products').then(({ data }) => setProducts(data.products)).catch(() => {});
+  }, []);
 
   const addItem = () => setItems([...items, { productName: '', quantity: 1, unitPrice: 0 }]);
   const removeItem = (i) => setItems(items.filter((_, idx) => idx !== i));
@@ -52,11 +92,17 @@ export default function NewOrder() {
     setItems(updated);
   };
 
+  const selectProduct = (i, product) => {
+    const updated = [...items];
+    updated[i] = { ...updated[i], productName: product.name, unitPrice: product.price };
+    setItems(updated);
+  };
+
   const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading || submittedId) return; // Prevent double-submit
+    if (loading || submittedId) return;
     setLoading(true);
 
     const localId = generateLocalId();
@@ -74,7 +120,7 @@ export default function NewOrder() {
       toast.success('Order submitted!');
       navigate('/salesman/orders');
     } catch (err) {
-      setSubmittedId(null); // Allow retry on error
+      setSubmittedId(null);
       toast.error(err.response?.data?.error || 'Failed');
     } finally {
       setLoading(false);
@@ -118,7 +164,12 @@ export default function NewOrder() {
                   <button type="button" onClick={() => removeItem(i)} className="text-xs text-red-500 hover:text-red-600 font-medium">Remove</button>
                 )}
               </div>
-              <input className="input bg-white" placeholder="Product Name *" value={item.productName} onChange={(e) => updateItem(i, 'productName', e.target.value)} required />
+              <ProductSearch
+                products={products}
+                value={item.productName}
+                onChange={(val) => updateItem(i, 'productName', val)}
+                onSelect={(p) => selectProduct(i, p)}
+              />
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="text-xs text-gray-500 mb-1 block">Qty</label>

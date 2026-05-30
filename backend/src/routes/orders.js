@@ -43,6 +43,29 @@ router.post('/', requireRole('salesman'), async (req, res) => {
       createdAt: now, updatedAt: now,
     });
 
+    // Auto-add new products to inventory
+    const ownerId = req.user.ownerId;
+    for (const item of sanitizedItems) {
+      const existingProduct = await db.collection('products')
+        .where('ownerId', '==', ownerId)
+        .where('nameLower', '==', item.productName.toLowerCase())
+        .get();
+      if (existingProduct.empty) {
+        const productId = uuidv4();
+        await db.collection('products').doc(productId).set({
+          name: item.productName,
+          nameLower: item.productName.toLowerCase(),
+          ownerId,
+          price: item.unitPrice,
+          unit: 'piece',
+          stock: null,
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+    }
+
     // Notify owner
     const notifId = uuidv4();
     await db.collection('notifications').doc(notifId).set({
