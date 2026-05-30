@@ -4,6 +4,13 @@ import { useAuthStore } from './store/authStore';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import LoginPage from './pages/LoginPage';
+import CustomerLogin from './pages/customer/CustomerLogin';
+import CustomerRegister from './pages/customer/CustomerRegister';
+import CustomerDashboard from './pages/customer/CustomerDashboard';
+import CustomerProducts from './pages/customer/CustomerProducts';
+import CustomerPlaceOrder from './pages/customer/CustomerPlaceOrder';
+import CustomerOrders from './pages/customer/CustomerOrders';
+import CustomerProfile from './pages/customer/CustomerProfile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminOwners from './pages/admin/AdminOwners';
 import AdminMap from './pages/admin/AdminMap';
@@ -28,7 +35,7 @@ import AccountantProfile from './pages/accountant/AccountantProfile';
 function RootRedirect() {
   const user = useAuthStore((s) => s.user);
   if (!user) return <LoginPage />;
-  const routes = { admin: '/admin', owner: '/owner', salesman: '/salesman', accountant: '/accountant' };
+  const routes = { admin: '/admin', owner: '/owner', salesman: '/salesman', accountant: '/accountant', customer: '/customer' };
   return <Navigate to={routes[user.role] || '/'} replace />;
 }
 
@@ -62,6 +69,14 @@ export default function App() {
         <Route path="/accountant/orders" element={<ProtectedRoute role="accountant"><AccountantOrders /></ProtectedRoute>} />
         <Route path="/accountant/inventory" element={<ProtectedRoute role="accountant"><AccountantInventory /></ProtectedRoute>} />
         <Route path="/accountant/profile" element={<ProtectedRoute role="accountant"><AccountantProfile /></ProtectedRoute>} />
+
+        <Route path="/customer/login" element={<CustomerLogin />} />
+        <Route path="/customer/register" element={<CustomerRegister />} />
+        <Route path="/customer" element={<ProtectedRoute role="customer"><CustomerDashboard /></ProtectedRoute>} />
+        <Route path="/customer/products" element={<ProtectedRoute role="customer"><CustomerProducts /></ProtectedRoute>} />
+        <Route path="/customer/order" element={<ProtectedRoute role="customer"><CustomerPlaceOrder /></ProtectedRoute>} />
+        <Route path="/customer/orders" element={<ProtectedRoute role="customer"><CustomerOrders /></ProtectedRoute>} />
+        <Route path="/customer/profile" element={<ProtectedRoute role="customer"><CustomerProfile /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

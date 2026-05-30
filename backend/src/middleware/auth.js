@@ -25,6 +25,15 @@ async function authenticate(req, res, next) {
     const db = getDb();
     const snap = await db.collection('users').doc(uid).get();
     if (!snap.exists || !snap.data().isActive) {
+      // Check if it's a customer
+      const customerSnap = await db.collection('customers').doc(uid).get();
+      if (customerSnap.exists && !customerSnap.data().isBlocked) {
+        const data = customerSnap.data();
+        const user = { uid, name: data.shopName || data.ownerName, email: data.email, role: 'customer', ownerId: data.linkedOwnerId || null, isActive: true };
+        userCache.set(uid, { user, ts: Date.now() });
+        req.user = user;
+        return next();
+      }
       userCache.delete(uid);
       return res.status(401).json({ error: 'User not found or inactive' });
     }
