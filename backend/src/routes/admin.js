@@ -129,4 +129,17 @@ router.get('/trail/:salesmanId', async (req, res) => {
   }
 });
 
+router.get('/inventory/:ownerId', async (req, res) => {
+  try {
+    const db = getDb();
+    const snap = await db.collection('products').where('ownerId', '==', req.params.ownerId).get();
+    const products = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    products.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    res.json({ products });
+  } catch (err) {
+    console.error('Admin get inventory error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
