@@ -69,8 +69,14 @@ export const useAuthStore = create(
         try {
           if (user.role === 'customer') {
             // For customers, verify via customer endpoint
-            const { data } = await api.get('/customer/me');
-            set({ user: { uid: data.uid, name: data.shopName || data.ownerName, email: data.email, role: 'customer' }, firebaseReady: true });
+            try {
+              const { data } = await api.get('/customer/me');
+              set({ user: { uid: data.uid, name: data.shopName || data.ownerName, email: data.email, role: 'customer' }, firebaseReady: true });
+            } catch {
+              // If /customer/me fails, keep existing user data (might be freshly registered)
+              // Only logout if token is truly invalid (handled by interceptor)
+              set({ firebaseReady: true });
+            }
           } else {
             const { data } = await api.get('/auth/me');
             set({ user: data });
