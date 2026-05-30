@@ -303,11 +303,12 @@ router.get('/reports', authenticate, async (req, res) => {
   }
 });
 
-// --- Owner: get customer orders ---
-router.get('/owner/orders', authenticate, requireRole('owner'), async (req, res) => {
+// --- Owner/Accountant: get customer orders ---
+router.get('/owner/orders', authenticate, requireRole('owner', 'accountant'), async (req, res) => {
   try {
     const db = getDb();
-    const snap = await db.collection('customerOrders').where('ownerId', '==', req.user.uid).get();
+    const ownerId = req.user.role === 'owner' ? req.user.uid : req.user.ownerId;
+    const snap = await db.collection('customerOrders').where('ownerId', '==', ownerId).get();
     let orders = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     orders.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
     res.json({ orders });
@@ -317,16 +318,17 @@ router.get('/owner/orders', authenticate, requireRole('owner'), async (req, res)
   }
 });
 
-// --- Owner: update customer order status ---
-router.patch('/owner/orders/:id/status', authenticate, requireRole('owner'), async (req, res) => {
+// --- Owner/Accountant: update customer order status ---
+router.patch('/owner/orders/:id/status', authenticate, requireRole('owner', 'accountant'), async (req, res) => {
   try {
     const { status } = req.body;
     const validStatuses = ['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
     if (!validStatuses.includes(status)) return res.status(400).json({ error: 'Invalid status' });
 
     const db = getDb();
+    const ownerId = req.user.role === 'owner' ? req.user.uid : req.user.ownerId;
     const doc = await db.collection('customerOrders').doc(req.params.id).get();
-    if (!doc.exists || doc.data().ownerId !== req.user.uid) return res.status(404).json({ error: 'Not found' });
+    if (!doc.exists || doc.data().ownerId !== ownerId) return res.status(404).json({ error: 'Not found' });
 
     await doc.ref.update({ status, updatedAt: new Date() });
     res.json({ message: 'Status updated' });
@@ -336,11 +338,12 @@ router.patch('/owner/orders/:id/status', authenticate, requireRole('owner'), asy
   }
 });
 
-// --- Owner: get their customers ---
-router.get('/owner/customers', authenticate, requireRole('owner'), async (req, res) => {
+// --- Owner/Accountant: get their customers ---
+router.get('/owner/customers', authenticate, requireRole('owner', 'accountant'), async (req, res) => {
   try {
     const db = getDb();
-    const snap = await db.collection('customers').where('linkedOwnerId', '==', req.user.uid).get();
+    const ownerId = req.user.role === 'owner' ? req.user.uid : req.user.ownerId;
+    const snap = await db.collection('customers').where('linkedOwnerId', '==', ownerId).get();
     const customers = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
     res.json({ customers });
   } catch (err) {

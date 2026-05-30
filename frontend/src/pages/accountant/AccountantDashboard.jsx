@@ -10,19 +10,21 @@ export default function AccountantDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([api.get('/orders'), api.get('/products')]).then(([o, p]) => {
-      const orders = o.data.orders;
-      const today = orders.filter((ord) => {
+    Promise.all([api.get('/orders'), api.get('/products'), api.get('/customer/owner/orders').catch(() => ({ data: { orders: [] } }))]).then(([o, p, co]) => {
+      const salesmanOrders = o.data.orders;
+      const customerOrders = co.data.orders || [];
+      const allOrders = [...salesmanOrders, ...customerOrders];
+      const today = allOrders.filter((ord) => {
         const d = ord.createdAt?._seconds ? new Date(ord.createdAt._seconds * 1000) : new Date(ord.createdAt);
         return d.toDateString() === new Date().toDateString();
       });
       setStats({
-        total: orders.length,
-        pending: orders.filter((ord) => ord.status === 'pending').length,
-        delivered: orders.filter((ord) => ord.status === 'delivered').length,
+        total: allOrders.length,
+        pending: allOrders.filter((ord) => ord.status === 'pending').length,
+        delivered: allOrders.filter((ord) => ord.status === 'delivered').length,
         todayOrders: today.length,
         todayRevenue: today.filter(ord => ord.status !== 'cancelled').reduce((s, ord) => s + (ord.totalValue || 0), 0),
-        totalRevenue: orders.filter(ord => ord.status !== 'cancelled').reduce((s, ord) => s + (ord.totalValue || 0), 0),
+        totalRevenue: allOrders.filter(ord => ord.status !== 'cancelled').reduce((s, ord) => s + (ord.totalValue || 0), 0),
         products: p.data.products.length,
       });
     }).catch(() => {}).finally(() => setLoading(false));
