@@ -4,14 +4,21 @@ const { comparePassword, hashPassword } = require('../utils/password');
 const { generateToken } = require('../utils/jwt');
 const { loginLimiter } = require('../middleware/rateLimiter');
 const { isValidEmail, isValidPassword } = require('../utils/validate');
+const { verifyRecaptcha } = require('../utils/recaptcha');
 
 const router = express.Router();
 
 router.post('/login', loginLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, recaptchaToken } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email format' });
+
+    // Verify reCAPTCHA (if configured)
+    const score = await verifyRecaptcha(recaptchaToken, 'LOGIN');
+    if (score !== null && score < 0.3) {
+      return res.status(403).json({ error: 'Bot detected. Please try again.' });
+    }
 
     const db = getDb();
     const snap = await db.collection('users').where('email', '==', email.toLowerCase().trim()).get();

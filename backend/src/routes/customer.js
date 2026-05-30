@@ -4,6 +4,7 @@ const { getDb, getAdmin } = require('../config/firebase');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { isNonEmptyString, sanitizeString, isValidLat, isValidLng } = require('../utils/validate');
 const { generateToken } = require('../utils/jwt');
+const { verifyRecaptcha } = require('../utils/recaptcha');
 
 const router = express.Router();
 
@@ -11,8 +12,14 @@ const router = express.Router();
 // Frontend sends Firebase ID token after Google sign-in
 router.post('/auth/google', async (req, res) => {
   try {
-    const { idToken } = req.body;
+    const { idToken, recaptchaToken } = req.body;
     if (!idToken) return res.status(400).json({ error: 'ID token required' });
+
+    // Verify reCAPTCHA
+    const score = await verifyRecaptcha(recaptchaToken, 'CUSTOMER_LOGIN');
+    if (score !== null && score < 0.3) {
+      return res.status(403).json({ error: 'Bot detected. Please try again.' });
+    }
 
     const admin = getAdmin();
     const decoded = await admin.auth().verifyIdToken(idToken);

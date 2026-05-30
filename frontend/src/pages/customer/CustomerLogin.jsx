@@ -5,6 +5,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
+import { getRecaptchaToken } from '../../utils/recaptcha';
 
 export default function CustomerLogin() {
   const [loading, setLoading] = useState(false);
@@ -14,11 +15,12 @@ export default function CustomerLogin() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
+      const recaptchaToken = await getRecaptchaToken('CUSTOMER_LOGIN');
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
 
-      const { data } = await api.post('/customer/auth/google', { idToken });
+      const { data } = await api.post('/customer/auth/google', { idToken, recaptchaToken });
       setToken(data.token, { uid: data.customer.uid, name: data.customer.shopName || data.customer.name || result.user.displayName, email: data.customer.email || result.user.email, role: 'customer' });
 
       if (data.isNew) {
