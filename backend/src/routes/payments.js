@@ -7,17 +7,18 @@ const { isNonEmptyString, sanitizeString } = require('../utils/validate');
 const router = express.Router();
 router.use(authenticate);
 
-// Owner: record a payment from customer
-router.post('/', requireRole('owner'), async (req, res) => {
+// Owner/Accountant: record a payment from customer
+router.post('/', requireRole('owner', 'accountant'), async (req, res) => {
   try {
     const { customerId, amount, method, note } = req.body;
     if (!customerId) return res.status(400).json({ error: 'Customer ID required' });
     if (typeof amount !== 'number' || amount <= 0) return res.status(400).json({ error: 'Valid amount required' });
 
     const db = getDb();
+    const ownerId = req.user.role === 'owner' ? req.user.uid : req.user.ownerId;
     // Verify customer belongs to this owner
     const customerDoc = await db.collection('customers').doc(customerId).get();
-    if (!customerDoc.exists || customerDoc.data().linkedOwnerId !== req.user.uid) {
+    if (!customerDoc.exists || customerDoc.data().linkedOwnerId !== ownerId) {
       return res.status(404).json({ error: 'Customer not found' });
     }
 
@@ -26,7 +27,7 @@ router.post('/', requireRole('owner'), async (req, res) => {
     await db.collection('payments').doc(id).set({
       customerId,
       customerName: customerDoc.data().shopName,
-      ownerId: req.user.uid,
+      ownerId,
       amount: Number(amount),
       method: sanitizeString(method || 'cash'),
       note: sanitizeString(note || ''),
@@ -40,13 +41,14 @@ router.post('/', requireRole('owner'), async (req, res) => {
   }
 });
 
-// Owner: get payment history for a customer
-router.get('/customer/:customerId', requireRole('owner'), async (req, res) => {
+// Owner/Accountant: get payment history for a customer
+router.get('/customer/:customerId', requireRole('owner', 'accountant'), async (req, res) => {
   try {
     const db = getDb();
+    const ownerId = req.user.role === 'owner' ? req.user.uid : req.user.ownerId;
     const snap = await db.collection('payments')
       .where('customerId', '==', req.params.customerId)
-      .where('ownerId', '==', req.user.uid)
+      .where('ownerId', '==', ownerId)
       .get();
     let payments = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     payments.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
@@ -57,21 +59,22 @@ router.get('/customer/:customerId', requireRole('owner'), async (req, res) => {
   }
 });
 
-// Owner: get ledger summary for all customers (total orders, total paid, balance)
-router.get('/ledger', requireRole('owner'), async (req, res) => {
+// Owner/Accountant: get ledger summary for all customers (total orders, total paid, balance)
+router.get('/ledger', requireRole('owner', 'accountant'), async (req, res) => {
   try {
     const db = getDb();
+    const ownerId = req.user.role === 'owner' ? req.user.uid : req.user.ownerId;
 
     // Get all customer orders for this owner
-    const ordersSnap = await db.collection('customerOrders').where('ownerId', '==', req.user.uid).get();
+    const ordersSnap = await db.collection('customerOrders').where('ownerId', '==', ownerId).get();
     const orders = ordersSnap.docs.map((d) => d.data());
 
     // Get all payments for this owner
-    const paymentsSnap = await db.collection('payments').where('ownerId', '==', req.user.uid).get();
+    const paymentsSnap = await db.collection('payments').where('ownerId', '==', ownerId).get();
     const payments = paymentsSnap.docs.map((d) => d.data());
 
     // Get customers
-    const customersSnap = await db.collection('customers').where('linkedOwnerId', '==', req.user.uid).get();
+    const customersSnap = await db.collection('customers').where('linkedOwnerId', '==', ownerId).get();
     const customers = customersSnap.docs.map((d) => ({ uid: d.id, ...d.data() }));
 
     // Build ledger per customer

@@ -33,6 +33,7 @@ import AccountantDashboard from './pages/accountant/AccountantDashboard';
 import AccountantOrders from './pages/accountant/AccountantOrders';
 import AccountantInventory from './pages/accountant/AccountantInventory';
 import AccountantProfile from './pages/accountant/AccountantProfile';
+import AccountantLedger from './pages/accountant/AccountantLedger';
 
 function RootRedirect() {
   const user = useAuthStore((s) => s.user);
@@ -72,6 +73,7 @@ export default function App() {
         <Route path="/accountant" element={<ProtectedRoute role="accountant"><AccountantDashboard /></ProtectedRoute>} />
         <Route path="/accountant/orders" element={<ProtectedRoute role="accountant"><AccountantOrders /></ProtectedRoute>} />
         <Route path="/accountant/inventory" element={<ProtectedRoute role="accountant"><AccountantInventory /></ProtectedRoute>} />
+        <Route path="/accountant/ledger" element={<ProtectedRoute role="accountant"><AccountantLedger /></ProtectedRoute>} />
         <Route path="/accountant/profile" element={<ProtectedRoute role="accountant"><AccountantProfile /></ProtectedRoute>} />
 
         <Route path="/customer/login" element={<CustomerLogin />} />
