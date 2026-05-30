@@ -5,10 +5,11 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
 const statusConfig = {
-  pending:   { color: 'bg-amber-100 text-amber-700',     label: 'Pending' },
-  confirmed: { color: 'bg-blue-100 text-blue-700',       label: 'Confirmed' },
-  delivered: { color: 'bg-emerald-100 text-emerald-700', label: 'Delivered' },
-  cancelled: { color: 'bg-red-100 text-red-600',         label: 'Cancelled' },
+  pending:    { color: 'bg-amber-100 text-amber-700',     label: 'Pending' },
+  confirmed:  { color: 'bg-blue-100 text-blue-700',       label: 'Confirmed' },
+  dispatched: { color: 'bg-purple-100 text-purple-700',   label: 'Dispatched' },
+  delivered:  { color: 'bg-emerald-100 text-emerald-700', label: 'Delivered' },
+  cancelled:  { color: 'bg-red-100 text-red-600',         label: 'Cancelled' },
 };
 
 function formatDate(val) {
@@ -20,7 +21,7 @@ function formatDate(val) {
 
 export default function OwnerOrders() {
   const [orders, setOrders] = useState([]);
-  const [filter, setFilter] = useState({ status: '', salesmanId: '' });
+  const [filter, setFilter] = useState({ status: '', salesmanId: '', source: '' });
   const [team, setTeam] = useState([]);
   const [expanded, setExpanded] = useState(null);
 
@@ -28,7 +29,26 @@ export default function OwnerOrders() {
     const params = new URLSearchParams();
     if (filter.status) params.append('status', filter.status);
     if (filter.salesmanId) params.append('salesmanId', filter.salesmanId);
-    api.get(`/orders?${params}`).then(({ data }) => setOrders(data.orders));
+
+    // Fetch both salesman orders and customer orders
+    Promise.all([
+      api.get(`/orders?${params}`),
+      api.get('/customer/owner/orders'),
+    ]).then(([salesmanRes, customerRes]) => {
+      const salesmanOrders = (salesmanRes.data.orders || []).map((o) => ({ ...o, source: 'salesman' }));
+      const customerOrders = (customerRes.data.orders || []).map((o) => ({ ...o, source: 'customer', salesmanName: o.customerName + ' (Customer)' }));
+      let all = [...salesmanOrders, ...customerOrders];
+      // Apply source filter
+      if (filter.source === 'salesman') all = all.filter((o) => o.source === 'salesman');
+      if (filter.source === 'customer') all = all.filter((o) => o.source === 'customer');
+      // Sort by date
+      all.sort((a, b) => {
+        const ta = a.createdAt?._seconds || a.createdAt?.seconds || 0;
+        const tb = b.createdAt?._seconds || b.createdAt?.seconds || 0;
+        return tb - ta;
+      });
+      setOrders(all);
+    }).catch(() => {});
   };
 
   useEffect(() => {
@@ -38,10 +58,18 @@ export default function OwnerOrders() {
 
   useEffect(() => { load(); }, [filter]);
 
-  const updateStatus = async (id, status) => {
-    await api.patch(`/orders/${id}/status`, { status });
-    toast.success('Status updated');
-    load();
+  const updateStatus = async (id, status, source) => {
+    try {
+      if (source === 'customer') {
+        await api.patch(`/customer/owner/orders/${id}/status`, { status });
+      } else {
+        await api.patch(`/orders/${id}/status`, { status });
+      }
+      toast.success('Status updated');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed');
+    }
   };
 
   const exportCSV = async () => {
@@ -86,14 +114,19 @@ export default function OwnerOrders() {
       </div>
 
       {/* Filters */}
-      <div className="card mb-4 flex gap-3">
-        <select className="input flex-1" value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })}>
+      <div className="card mb-4 flex gap-3 flex-wrap">
+        <select className="input flex-1 min-w-[120px]" value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })}>
           <option value="">All Statuses</option>
           {Object.entries(statusConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <select className="input flex-1" value={filter.salesmanId} onChange={(e) => setFilter({ ...filter, salesmanId: e.target.value })}>
+        <select className="input flex-1 min-w-[120px]" value={filter.salesmanId} onChange={(e) => setFilter({ ...filter, salesmanId: e.target.value })}>
           <option value="">All Salesmen</option>
           {team.map((m) => <option key={m.uid} value={m.uid}>{m.name}</option>)}
+        </select>
+        <select className="input flex-1 min-w-[120px]" value={filter.source} onChange={(e) => setFilter({ ...filter, source: e.target.value })}>
+          <option value="">All Sources</option>
+          <option value="salesman">Salesman Orders</option>
+          <option value="customer">Customer Orders</option>
         </select>
       </div>
 
@@ -105,7 +138,9 @@ export default function OwnerOrders() {
             <div className="flex items-start justify-between mb-2">
               <div>
                 <p className="font-semibold text-gray-900">{o.customerName}</p>
-                <p className="text-xs text-gray-400">by {o.salesmanName} · {formatDate(o.createdAt)}</p>
+                <p className="text-xs text-gray-400">
+                  {o.source === 'customer' ? '🛒 Customer order' : `by ${o.salesmanName}`} · {formatDate(o.createdAt)}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`badge ${statusConfig[o.status]?.color}`}>{statusConfig[o.status]?.label}</span>
@@ -119,12 +154,18 @@ export default function OwnerOrders() {
               <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                 {o.status === 'pending' && (
                   <>
-                    <button onClick={() => updateStatus(o.id, 'confirmed')} className="btn-primary text-xs px-3 py-1.5">Confirm</button>
-                    <button onClick={() => updateStatus(o.id, 'cancelled')} className="btn-danger text-xs px-3 py-1.5">Cancel</button>
+                    <button onClick={() => updateStatus(o.id, 'confirmed', o.source)} className="btn-primary text-xs px-3 py-1.5">Confirm</button>
+                    <button onClick={() => updateStatus(o.id, 'cancelled', o.source)} className="btn-danger text-xs px-3 py-1.5">Cancel</button>
                   </>
                 )}
                 {o.status === 'confirmed' && (
-                  <button onClick={() => updateStatus(o.id, 'delivered')} className="btn-success text-xs px-3 py-1.5">Delivered</button>
+                  <>
+                    {o.source === 'customer' && <button onClick={() => updateStatus(o.id, 'dispatched', o.source)} className="btn-primary text-xs px-3 py-1.5">Dispatch</button>}
+                    <button onClick={() => updateStatus(o.id, 'delivered', o.source)} className="btn-success text-xs px-3 py-1.5">Delivered</button>
+                  </>
+                )}
+                {o.status === 'dispatched' && (
+                  <button onClick={() => updateStatus(o.id, 'delivered', o.source)} className="btn-success text-xs px-3 py-1.5">Delivered</button>
                 )}
               </div>
             </div>
