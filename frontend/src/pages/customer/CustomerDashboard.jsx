@@ -36,7 +36,7 @@ export default function CustomerDashboard() {
   return (
     <div className="min-h-screen bg-[#f8f8f8] pb-28">
       {/* Header */}
-      <div className="bg-[#0C831F] pb-4">
+      <div className="bg-[#6C63FF] pb-4">
         <div className="max-w-2xl mx-auto px-4 pt-4">
           {/* Top row */}
           <div className="flex items-center justify-between mb-3">
@@ -96,7 +96,7 @@ export default function CustomerDashboard() {
           <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
             {categories.map((cat) => (
               <button key={cat} onClick={() => setActiveCategory(cat)}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all ${activeCategory === cat ? 'bg-[#0C831F] text-white' : 'bg-white text-gray-600 border border-gray-200'}`}>
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all ${activeCategory === cat ? 'bg-[#6C63FF] text-white' : 'bg-white text-gray-600 border border-gray-200'}`}>
                 {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
               </button>
             ))}
@@ -124,11 +124,11 @@ export default function CustomerDashboard() {
                     <p className="text-base font-black text-gray-900">₹{p.price}</p>
                     {qty === 0 ? (
                       <button onClick={() => addItem(p)}
-                        className="bg-[#0C831F] text-white text-xs font-bold px-4 py-1.5 rounded-lg active:scale-95 transition-all">
+                        className="bg-[#6C63FF] text-white text-xs font-bold px-4 py-1.5 rounded-lg active:scale-95 transition-all">
                         ADD
                       </button>
                     ) : (
-                      <div className="flex items-center bg-[#0C831F] rounded-lg overflow-hidden">
+                      <div className="flex items-center bg-[#6C63FF] rounded-lg overflow-hidden">
                         <button onClick={() => removeItem(p.id)} className="w-7 h-7 flex items-center justify-center text-white font-bold text-base">−</button>
                         <span className="text-white text-xs font-bold w-5 text-center">{qty}</span>
                         <button onClick={() => addItem(p)} className="w-7 h-7 flex items-center justify-center text-white font-bold text-base">+</button>
@@ -154,7 +154,7 @@ export default function CustomerDashboard() {
       {cartCount > 0 && (
         <div className="fixed bottom-4 left-4 right-4 z-50">
           <button onClick={() => navigate('/customer/order')}
-            className="w-full max-w-2xl mx-auto flex items-center justify-between bg-[#0C831F] rounded-2xl px-5 py-4 shadow-[0_8px_30px_rgba(12,131,31,0.4)] active:scale-[0.98] transition-all">
+            className="w-full max-w-2xl mx-auto flex items-center justify-between bg-[#6C63FF] rounded-2xl px-5 py-4 shadow-[0_8px_30px_rgba(12,131,31,0.4)] active:scale-[0.98] transition-all">
             <div className="flex items-center gap-2">
               <div className="bg-white/20 rounded-lg px-2 py-1">
                 <p className="text-white text-xs font-bold">{cartCount}</p>

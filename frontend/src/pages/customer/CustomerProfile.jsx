@@ -85,7 +85,7 @@ export default function CustomerProfile() {
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
         {/* Profile card */}
         <div className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-[#0C831F] flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+          <div className="w-14 h-14 rounded-full bg-[#6C63FF] flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
             {customer?.shopName?.[0]?.toUpperCase() || 'C'}
           </div>
           <div>
@@ -106,7 +106,7 @@ export default function CustomerProfile() {
               </div>
               <div className="bg-green-50 rounded-xl p-3 text-center">
                 <p className="text-xs text-green-500 font-medium">Paid</p>
-                <p className="text-xl font-bold text-[#0C831F]">₹{totalPaid.toFixed(0)}</p>
+                <p className="text-xl font-bold text-[#6C63FF]">₹{totalPaid.toFixed(0)}</p>
               </div>
             </div>
           </div>
@@ -123,7 +123,7 @@ export default function CustomerProfile() {
               {customer.shopLocation && <div className="flex justify-between gap-4"><span className="text-gray-400 flex-shrink-0">Location</span><span className="font-medium text-gray-800 text-right text-xs">{customer.shopLocation.address || 'Mapped'}</span></div>}
             </div>
             <button onClick={updateShopLocation} disabled={locating}
-              className="mt-3 w-full py-2.5 rounded-xl border-2 border-dashed border-[#0C831F] text-sm text-[#0C831F] font-semibold disabled:opacity-50">
+              className="mt-3 w-full py-2.5 rounded-xl border-2 border-dashed border-[#6C63FF] text-sm text-[#6C63FF] font-semibold disabled:opacity-50">
               {locating ? 'Getting location...' : customer.shopLocation ? '📍 Update Shop Location' : '📍 Map Your Shop'}
             </button>
           </div>
@@ -135,14 +135,14 @@ export default function CustomerProfile() {
           {customer?.linkedOwnerId ? (
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                <svg className="w-4 h-4 text-[#0C831F]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                <svg className="w-4 h-4 text-[#6C63FF]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
               </div>
-              <p className="text-sm font-semibold text-[#0C831F]">Connected to your supplier</p>
+              <p className="text-sm font-semibold text-[#6C63FF]">Connected to your supplier</p>
             </div>
           ) : (
             <div className="flex gap-2">
-              <input className="flex-1 bg-gray-50 rounded-xl px-3 py-2.5 text-sm outline-none border border-gray-100 focus:border-[#0C831F]" placeholder="Enter supplier code" value={ownerCode} onChange={(e) => setOwnerCode(e.target.value)} />
-              <button onClick={linkOwner} disabled={linking} className="bg-[#0C831F] text-white text-sm font-bold px-4 rounded-xl disabled:opacity-50">
+              <input className="flex-1 bg-gray-50 rounded-xl px-3 py-2.5 text-sm outline-none border border-gray-100 focus:border-[#6C63FF]" placeholder="Enter supplier code" value={ownerCode} onChange={(e) => setOwnerCode(e.target.value)} />
+              <button onClick={linkOwner} disabled={linking} className="bg-[#6C63FF] text-white text-sm font-bold px-4 rounded-xl disabled:opacity-50">
                 {linking ? '...' : 'Link'}
               </button>
             </div>
@@ -170,8 +170,8 @@ export default function CustomerProfile() {
         {/* Report form */}
         {showReport && (
           <form onSubmit={submitReport} className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
-            <input className="w-full bg-gray-50 rounded-xl px-3 py-2.5 text-sm outline-none border border-gray-100 focus:border-[#0C831F]" placeholder="Subject" value={report.subject} onChange={(e) => setReport({ ...report, subject: e.target.value })} required />
-            <textarea className="w-full bg-gray-50 rounded-xl px-3 py-2.5 text-sm outline-none resize-none border border-gray-100 focus:border-[#0C831F]" rows={3} placeholder="Describe the issue..." value={report.message} onChange={(e) => setReport({ ...report, message: e.target.value })} required />
+            <input className="w-full bg-gray-50 rounded-xl px-3 py-2.5 text-sm outline-none border border-gray-100 focus:border-[#6C63FF]" placeholder="Subject" value={report.subject} onChange={(e) => setReport({ ...report, subject: e.target.value })} required />
+            <textarea className="w-full bg-gray-50 rounded-xl px-3 py-2.5 text-sm outline-none resize-none border border-gray-100 focus:border-[#6C63FF]" rows={3} placeholder="Describe the issue..." value={report.message} onChange={(e) => setReport({ ...report, message: e.target.value })} required />
             <button type="submit" disabled={submitting} className="w-full bg-orange-500 text-white font-bold py-3 rounded-xl text-sm disabled:opacity-50">
               {submitting ? 'Submitting...' : 'Submit Report'}
             </button>

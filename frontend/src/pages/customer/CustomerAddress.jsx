@@ -9,8 +9,8 @@ import toast from 'react-hot-toast';
 const pinIcon = L.divIcon({
   className: '',
   html: `<div style="display:flex;flex-direction:column;align-items:center">
-    <div style="width:16px;height:16px;background:#0C831F;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>
-    <div style="width:2px;height:16px;background:#0C831F;margin-top:-2px"></div>
+    <div style="width:16px;height:16px;background:#6C63FF;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>
+    <div style="width:2px;height:16px;background:#6C63FF;margin-top:-2px"></div>
     <div style="width:8px;height:4px;background:rgba(0,0,0,0.2);border-radius:50%;margin-top:2px"></div>
   </div>`,
   iconSize: [20, 40],
@@ -162,7 +162,7 @@ export default function CustomerAddress() {
               </button>
             ))}
           </div>
-          <button onClick={() => setShowForm(true)} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-[#0C831F] text-[#0C831F] text-sm font-semibold mb-4">
+          <button onClick={() => setShowForm(true)} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-[#6C63FF] text-[#6C63FF] text-sm font-semibold mb-4">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             Add New Address
           </button>
@@ -195,7 +195,7 @@ export default function CustomerAddress() {
             {/* Use current location button */}
             <button onClick={getCurrentLocation}
               className="absolute bottom-4 right-4 z-[999] bg-white shadow-lg rounded-full px-4 py-2.5 flex items-center gap-2 border border-gray-200 hover:bg-gray-50 active:scale-95">
-              <svg className="w-4 h-4 text-[#0C831F]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+              <svg className="w-4 h-4 text-[#6C63FF]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
               <span className="text-xs font-semibold text-gray-700">Use my location</span>
             </button>
 
@@ -210,7 +210,7 @@ export default function CustomerAddress() {
             <div className="max-w-2xl mx-auto">
               {/* Detected address */}
               <div className="flex items-start gap-2 mb-4 bg-green-50 rounded-xl p-3">
-                <svg className="w-4 h-4 text-[#0C831F] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+                <svg className="w-4 h-4 text-[#6C63FF] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
                 <p className="text-xs text-gray-700 leading-relaxed flex-1">{address || 'Detecting address...'}</p>
               </div>
 
@@ -218,18 +218,18 @@ export default function CustomerAddress() {
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Flat / House / Shop No. *</label>
-                  <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0C831F] transition-colors" placeholder="e.g. Shop 12, Ground Floor" value={form.flat} onChange={(e) => setForm({ ...form, flat: e.target.value })} />
+                  <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#6C63FF] transition-colors" placeholder="e.g. Shop 12, Ground Floor" value={form.flat} onChange={(e) => setForm({ ...form, flat: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Landmark (optional)</label>
-                  <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0C831F] transition-colors" placeholder="e.g. Near Bus Stand" value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} />
+                  <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#6C63FF] transition-colors" placeholder="e.g. Near Bus Stand" value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Save as</label>
                   <div className="flex gap-2">
                     {[{ value: 'home', label: '🏠 Home' }, { value: 'work', label: '🏢 Work' }, { value: 'other', label: '📍 Other' }].map((opt) => (
                       <button key={opt.value} onClick={() => setForm({ ...form, label: opt.value })}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${form.label === opt.value ? 'bg-[#0C831F] text-white' : 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${form.label === opt.value ? 'bg-[#6C63FF] text-white' : 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
                         {opt.label}
                       </button>
                     ))}
@@ -243,7 +243,7 @@ export default function CustomerAddress() {
           <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-50">
             <div className="max-w-2xl mx-auto">
               <button onClick={confirmAddress} disabled={saving || !position || !form.flat.trim()}
-                className="w-full bg-[#0C831F] text-white font-bold py-4 rounded-2xl text-base disabled:opacity-50 active:scale-[0.98] transition-all">
+                className="w-full bg-[#6C63FF] text-white font-bold py-4 rounded-2xl text-base disabled:opacity-50 active:scale-[0.98] transition-all">
                 {saving ? 'Saving...' : 'Confirm & Save Address'}
               </button>
             </div>

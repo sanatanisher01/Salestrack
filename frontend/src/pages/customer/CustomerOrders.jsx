@@ -54,7 +54,7 @@ export default function CustomerOrders() {
                     {isCancelled ? (
                       <span className="text-xs font-semibold text-red-500">Cancelled</span>
                     ) : (
-                      <span className="text-xs font-semibold text-[#0C831F]">{stepLabels[o.status] || o.status}</span>
+                      <span className="text-xs font-semibold text-[#6C63FF]">{stepLabels[o.status] || o.status}</span>
                     )}
                   </div>
                 </div>
@@ -64,11 +64,11 @@ export default function CustomerOrders() {
                   <div className="flex items-center gap-1 mt-3">
                     {steps.map((step, i) => (
                       <div key={step} className="flex items-center flex-1">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${i <= currentStep ? 'bg-[#0C831F] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${i <= currentStep ? 'bg-[#6C63FF] text-white' : 'bg-gray-100 text-gray-400'}`}>
                           {i <= currentStep ? '✓' : i + 1}
                         </div>
                         {i < steps.length - 1 && (
-                          <div className={`flex-1 h-0.5 mx-1 ${i < currentStep ? 'bg-[#0C831F]' : 'bg-gray-200'}`} />
+                          <div className={`flex-1 h-0.5 mx-1 ${i < currentStep ? 'bg-[#6C63FF]' : 'bg-gray-200'}`} />
                         )}
                       </div>
                     ))}
@@ -100,7 +100,7 @@ export default function CustomerOrders() {
             <p className="text-5xl mb-3">📦</p>
             <p className="font-bold text-gray-700 text-lg">No orders yet</p>
             <p className="text-sm text-gray-400 mt-1">Your orders will appear here</p>
-            <button onClick={() => navigate('/customer')} className="mt-4 bg-[#0C831F] text-white font-bold px-6 py-3 rounded-2xl text-sm">
+            <button onClick={() => navigate('/customer')} className="mt-4 bg-[#6C63FF] text-white font-bold px-6 py-3 rounded-2xl text-sm">
               Start Shopping
             </button>
           </div>

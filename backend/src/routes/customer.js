@@ -179,7 +179,7 @@ router.get('/products', authenticate, async (req, res) => {
 // --- Place order ---
 router.post('/orders', authenticate, async (req, res) => {
   try {
-    const { items, deliveryAddress, note } = req.body;
+    const { items, deliveryAddress, note, paymentMethod } = req.body;
     if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ error: 'At least one item required' });
 
     const db = getDb();
@@ -219,6 +219,7 @@ router.post('/orders', authenticate, async (req, res) => {
       deliveryAddress: address,
       note: sanitizeString(note || ''),
       totalValue,
+      paymentMethod: paymentMethod || 'cod',
       status: 'pending',
       createdAt: now,
       updatedAt: now,
