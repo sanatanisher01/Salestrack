@@ -11,6 +11,7 @@ import CustomerProducts from './pages/customer/CustomerProducts';
 import CustomerPlaceOrder from './pages/customer/CustomerPlaceOrder';
 import CustomerOrders from './pages/customer/CustomerOrders';
 import CustomerProfile from './pages/customer/CustomerProfile';
+import CustomerAddress from './pages/customer/CustomerAddress';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminOwners from './pages/admin/AdminOwners';
 import AdminMap from './pages/admin/AdminMap';
@@ -81,6 +82,7 @@ export default function App() {
         <Route path="/customer" element={<ProtectedRoute role="customer"><CustomerDashboard /></ProtectedRoute>} />
         <Route path="/customer/products" element={<ProtectedRoute role="customer"><CustomerProducts /></ProtectedRoute>} />
         <Route path="/customer/order" element={<ProtectedRoute role="customer"><CustomerPlaceOrder /></ProtectedRoute>} />
+        <Route path="/customer/address" element={<ProtectedRoute role="customer"><CustomerAddress /></ProtectedRoute>} />
         <Route path="/customer/orders" element={<ProtectedRoute role="customer"><CustomerOrders /></ProtectedRoute>} />
         <Route path="/customer/profile" element={<ProtectedRoute role="customer"><CustomerProfile /></ProtectedRoute>} />
 

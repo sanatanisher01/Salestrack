@@ -1,42 +1,33 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCartStore } from '../../store/customerCartStore';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 
 export default function CustomerPlaceOrder() {
   const navigate = useNavigate();
+  const locationState = useLocation().state;
   const { getCartItems, getCartTotal, addItem, removeItem, clearCart } = useCartStore();
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
-  const [address, setAddress] = useState(null);
-  const [locating, setLocating] = useState(false);
+  const [address, setAddress] = useState(locationState?.selectedAddress || null);
 
   const cartItems = getCartItems();
   const total = getCartTotal();
 
   useEffect(() => {
-    api.get('/customer/me').then(({ data }) => {
-      if (data.shopLocation) setAddress(data.shopLocation);
-    }).catch(() => {});
+    if (!address) {
+      // Check saved addresses first
+      const saved = localStorage.getItem('jdm-saved-addresses');
+      if (saved) {
+        try { const addrs = JSON.parse(saved); if (addrs.length > 0) { setAddress(addrs[0]); return; } } catch {}
+      }
+      // Fallback to shop location
+      api.get('/customer/me').then(({ data }) => {
+        if (data.shopLocation) setAddress(data.shopLocation);
+      }).catch(() => {});
+    }
   }, []);
-
-  const confirmLocation = () => {
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        let addr = '';
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`, { headers: { 'User-Agent': 'JDM/1.0' } });
-          if (res.ok) { const d = await res.json(); addr = d.display_name || ''; }
-        } catch {}
-        setAddress({ lat: coords.latitude, lng: coords.longitude, address: addr });
-        setLocating(false);
-      },
-      () => { setLocating(false); toast.error('Could not get location'); },
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
-  };
 
   const handleOrder = async () => {
     if (cartItems.length === 0) { toast.error('Cart is empty'); return; }
@@ -115,14 +106,15 @@ export default function CustomerPlaceOrder() {
                 <div className="flex items-start gap-2">
                   <svg className="w-4 h-4 text-[#0C831F] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-700 leading-relaxed">{address.address || `${address.lat?.toFixed(4)}, ${address.lng?.toFixed(4)}`}</p>
-                    <button onClick={confirmLocation} className="text-[#0C831F] text-xs font-bold mt-1">Change</button>
+                    {address.flat && <p className="text-sm font-semibold text-gray-900">{address.flat}</p>}
+                    <p className="text-xs text-gray-500 leading-relaxed">{address.full || address.address || `${address.lat?.toFixed(4)}, ${address.lng?.toFixed(4)}`}</p>
+                    <button onClick={() => navigate('/customer/address', { state: { returnTo: '/customer/order' } })} className="text-[#0C831F] text-xs font-bold mt-1.5">Change Address</button>
                   </div>
                 </div>
               ) : (
-                <button onClick={confirmLocation} disabled={locating}
-                  className="w-full py-3 border-2 border-dashed border-[#0C831F] rounded-xl text-[#0C831F] text-sm font-semibold disabled:opacity-50">
-                  {locating ? 'Getting location...' : '📍 Add delivery address'}
+                <button onClick={() => navigate('/customer/address', { state: { returnTo: '/customer/order' } })}
+                  className="w-full py-3 border-2 border-dashed border-[#0C831F] rounded-xl text-[#0C831F] text-sm font-semibold">
+                  📍 Add delivery address
                 </button>
               )}
             </div>
