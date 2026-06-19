@@ -13,11 +13,18 @@ export default function CustomerDashboard() {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [balance, setBalance] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/customer/me').then(({ data }) => setCustomer(data)).catch(() => {});
-    api.get('/customer/products').then(({ data }) => setProducts(data.products)).catch(() => {});
-    api.get('/payments/me').then(({ data }) => setBalance(data.balance || 0)).catch(() => {});
+    Promise.all([
+      api.get('/customer/me').catch(() => ({ data: null })),
+      api.get('/customer/products').catch(() => ({ data: { products: [] } })),
+      api.get('/payments/me').catch(() => ({ data: { balance: 0 } })),
+    ]).then(([me, prods, pay]) => {
+      setCustomer(me.data);
+      setProducts(prods.data.products);
+      setBalance(pay.data.balance || 0);
+    }).finally(() => setLoading(false));
   }, []);
 
   const cartCount = getCartCount();
@@ -28,125 +35,170 @@ export default function CustomerDashboard() {
   if (activeCategory !== 'all') filtered = filtered.filter((p) => (p.unit || 'piece') === activeCategory);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-28">
-      {/* Header */}
-      <div className="sticky top-0 z-50 shadow-md" style={{ background: 'linear-gradient(135deg, #6C63FF, #8B5CF6)' }}>
-        <div className="max-w-2xl mx-auto px-4 pt-4 pb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
-                <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+    <div className="min-h-screen bg-[#F8FAFC] pb-32" style={{ fontFamily: "'Inter', sans-serif" }}>
+      {/* Premium Header */}
+      <div className="relative">
+        <div className="absolute inset-0 h-52" style={{ background: 'linear-gradient(135deg, #6C63FF 0%, #8B5CF6 50%, #A78BFA 100%)', borderRadius: '0 0 32px 32px' }} />
+        <div className="relative max-w-2xl mx-auto px-5 pt-5 pb-8">
+          {/* Top row */}
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/10">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </div>
               <div>
-                <p className="text-white text-sm font-bold leading-tight">{customer?.shopName || 'Your Shop'}</p>
-                <p className="text-white/70 text-[10px] truncate max-w-[180px]">{customer?.shopLocation?.address?.split(',').slice(0, 2).join(',') || 'Set location in profile'}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-white text-base font-bold">{customer?.shopName || 'Your Shop'}</p>
+                  <svg className="w-4 h-4 text-green-300" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <p className="text-white/60 text-xs mt-0.5">{customer?.shopLocation?.address?.split(',').slice(0, 2).join(',') || 'Set your delivery location'}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {balance > 0 && (
-                <div className="bg-red-500 rounded-full px-2.5 py-1">
-                  <p className="text-[9px] font-bold text-white">₹{balance.toFixed(0)} due</p>
+                <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/10">
+                  <p className="text-[10px] font-bold text-white">₹{balance.toFixed(0)} due</p>
                 </div>
               )}
-              <button onClick={() => navigate('/customer/orders')} className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+              <button onClick={() => navigate('/customer/orders')} className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/10 active:scale-95 transition-transform">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
               </button>
-              <button onClick={() => navigate('/customer/profile')} className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center text-white text-sm font-bold">
+              <button onClick={() => navigate('/customer/profile')} className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/10 text-white text-sm font-bold active:scale-95 transition-transform">
                 {user?.name?.[0]?.toUpperCase() || 'C'}
               </button>
             </div>
           </div>
 
-          {/* Search */}
-          <div className="flex items-center gap-2.5 bg-white rounded-xl px-4 py-2.5 shadow-sm">
-            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input className="bg-transparent flex-1 text-sm text-gray-800 outline-none placeholder-gray-400" placeholder="Search for products..." value={search} onChange={(e) => setSearch(e.target.value)} />
-            {search && <button onClick={() => setSearch('')}><svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>}
+          {/* Search bar — floating */}
+          <div className="bg-white rounded-2xl px-4 py-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex items-center gap-3">
+            <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input className="bg-transparent flex-1 text-sm text-[#111827] outline-none placeholder-gray-400 font-medium" placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            {search && <button onClick={() => setSearch('')} className="active:scale-90 transition-transform"><svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>}
+            <div className="w-px h-5 bg-gray-200" />
+            <button onClick={() => navigate('/customer/order')} className="relative active:scale-90 transition-transform">
+              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+              {cartCount > 0 && <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#FF7A00] text-white text-[9px] font-bold rounded-full flex items-center justify-center">{cartCount}</span>}
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4">
-        {/* Category tabs */}
+      <div className="max-w-2xl mx-auto px-5 -mt-2">
+        {/* Category chips */}
         {!search && (
-          <div className="flex gap-2 mt-4 mb-4 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="flex gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
             {categories.map((cat) => (
               <button key={cat} onClick={() => setActiveCategory(cat)}
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition-all ${activeCategory === cat ? 'bg-[#6C63FF] text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200'}`}>
-                {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                className={`flex-shrink-0 px-5 py-2.5 rounded-full text-xs font-semibold transition-all duration-200 active:scale-95 ${
+                  activeCategory === cat
+                    ? 'bg-gradient-to-r from-[#6C63FF] to-[#8B5CF6] text-white shadow-md shadow-purple-200'
+                    : 'bg-white text-[#6B7280] border border-gray-200 hover:border-[#6C63FF] hover:text-[#6C63FF]'
+                }`}>
+                {cat === 'all' ? 'All Products' : cat.charAt(0).toUpperCase() + cat.slice(1)}
               </button>
             ))}
           </div>
         )}
 
-        {/* Products header */}
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-bold text-[#111827]">
-            {search ? `Results for "${search}"` : activeCategory === 'all' ? 'All Products' : activeCategory}
-            <span className="text-gray-400 font-normal ml-1.5">({filtered.length})</span>
-          </p>
+        {/* Section header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-[#111827]">
+              {search ? `Results for "${search}"` : 'Products'}
+            </h2>
+            <p className="text-xs text-[#6B7280] mt-0.5">{filtered.length} items available</p>
+          </div>
         </div>
 
-        {/* Products grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {filtered.map((p) => {
-            const qty = getQty(p.id);
-            return (
-              <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <div className="bg-gray-50 h-32 flex items-center justify-center border-b border-gray-100">
-                  {p.images?.length > 0 ? (
-                    <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <svg className="w-12 h-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                  )}
-                </div>
-                <div className="p-3">
-                  <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">{p.unit}</p>
-                  <p className="text-sm font-semibold text-[#111827] leading-tight mt-0.5 line-clamp-2 min-h-[2.5rem]">{p.name}</p>
-                  <div className="flex items-center justify-between mt-3">
-                    <p className="text-base font-black text-[#111827]">₹{p.price}</p>
-                    {qty === 0 ? (
-                      <button onClick={() => addItem(p)}
-                        className="bg-[#F97316] text-white text-xs font-bold px-4 py-1.5 rounded-lg active:scale-95 transition-all shadow-sm shadow-orange-200">
-                        ADD
-                      </button>
-                    ) : (
-                      <div className="flex items-center bg-[#F97316] rounded-lg overflow-hidden shadow-sm shadow-orange-200">
-                        <button onClick={() => removeItem(p.id)} className="w-7 h-7 flex items-center justify-center text-white font-bold text-lg">−</button>
-                        <span className="text-white text-xs font-bold w-5 text-center">{qty}</span>
-                        <button onClick={() => addItem(p)} className="w-7 h-7 flex items-center justify-center text-white font-bold text-lg">+</button>
-                      </div>
-                    )}
-                  </div>
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="grid grid-cols-2 gap-4">
+            {[1,2,3,4].map((i) => (
+              <div key={i} className="bg-white rounded-[18px] overflow-hidden animate-pulse">
+                <div className="h-36 bg-gray-100" />
+                <div className="p-4 space-y-2">
+                  <div className="h-3 bg-gray-100 rounded w-1/3" />
+                  <div className="h-4 bg-gray-100 rounded w-2/3" />
+                  <div className="h-5 bg-gray-100 rounded w-1/4 mt-3" />
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {filtered.length === 0 && (
+        {/* Products grid */}
+        {!loading && (
+          <div className="grid grid-cols-2 gap-4">
+            {filtered.map((p) => {
+              const qty = getQty(p.id);
+              return (
+                <div key={p.id} className="bg-white rounded-[18px] overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100/80 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 active:scale-[0.97]">
+                  {/* Image */}
+                  <div className="relative h-36 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                    {p.images?.length > 0 ? (
+                      <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <svg className="w-14 h-14 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.8} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                    )}
+                    {/* Category badge */}
+                    <span className="absolute top-2.5 left-2.5 bg-white/90 backdrop-blur-sm text-[9px] font-bold text-[#6B7280] px-2 py-0.5 rounded-full uppercase tracking-wider border border-gray-100">{p.unit}</span>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-3.5">
+                    <p className="text-[13px] font-semibold text-[#111827] leading-tight line-clamp-2 min-h-[2.25rem]">{p.name}</p>
+                    <div className="flex items-end justify-between mt-3">
+                      <p className="text-lg font-black text-[#111827]">₹{p.price}</p>
+                      {qty === 0 ? (
+                        <button onClick={() => addItem(p)}
+                          className="bg-gradient-to-r from-[#FF7A00] to-[#FF9A40] text-white text-[11px] font-bold px-4 py-2 rounded-xl shadow-md shadow-orange-100 active:scale-90 transition-all duration-150">
+                          ADD
+                        </button>
+                      ) : (
+                        <div className="flex items-center bg-gradient-to-r from-[#FF7A00] to-[#FF9A40] rounded-xl overflow-hidden shadow-md shadow-orange-100">
+                          <button onClick={() => removeItem(p.id)} className="w-8 h-8 flex items-center justify-center text-white font-bold text-lg active:scale-75 transition-transform">−</button>
+                          <span className="text-white text-xs font-bold w-5 text-center">{qty}</span>
+                          <button onClick={() => addItem(p)} className="w-8 h-8 flex items-center justify-center text-white font-bold text-lg active:scale-75 transition-transform">+</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && filtered.length === 0 && (
           <div className="text-center py-20">
-            <svg className="w-16 h-16 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <p className="font-semibold text-gray-500">No products found</p>
-            {!customer?.linkedOwnerId && <p className="text-sm text-gray-400 mt-1">Link to a supplier in Profile</p>}
+            <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+            <p className="font-semibold text-[#111827] text-lg">No products found</p>
+            <p className="text-sm text-[#6B7280] mt-1">{!customer?.linkedOwnerId ? 'Link to a supplier in Profile to see products' : 'Try a different search term'}</p>
           </div>
         )}
       </div>
 
-      {/* Floating cart bar */}
+      {/* Floating Cart Bar — Frosted Glass */}
       {cartCount > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 z-50">
+        <div className="fixed bottom-5 left-5 right-5 z-50">
           <button onClick={() => navigate('/customer/order')}
-            className="w-full max-w-2xl mx-auto flex items-center justify-between bg-[#6C63FF] rounded-2xl px-5 py-4 shadow-lg shadow-purple-200 active:scale-[0.98] transition-all">
-            <div className="flex items-center gap-2.5">
-              <div className="bg-white/20 rounded-lg w-7 h-7 flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+            className="w-full max-w-2xl mx-auto flex items-center justify-between rounded-2xl px-5 py-4 border border-white/20 active:scale-[0.97] transition-all duration-200"
+            style={{ background: 'linear-gradient(135deg, #6C63FF, #8B5CF6)', boxShadow: '0 12px 40px rgba(108, 99, 255, 0.35)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
               </div>
-              <p className="text-white text-sm font-medium">{cartCount} item{cartCount > 1 ? 's' : ''}</p>
+              <div className="text-left">
+                <p className="text-white text-xs font-medium opacity-80">{cartCount} item{cartCount > 1 ? 's' : ''}</p>
+                <p className="text-white text-base font-bold">₹{cartTotal.toFixed(0)}</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <p className="text-white font-bold text-base">₹{cartTotal.toFixed(0)}</p>
-              <svg className="w-4 h-4 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+            <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2.5">
+              <p className="text-white text-sm font-bold">View Cart</p>
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
             </div>
           </button>
         </div>
