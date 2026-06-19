@@ -1,15 +1,11 @@
 import { useEffect, useState } from 'react';
-import CustomerLayout from '../../layouts/CustomerLayout';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { format } from 'date-fns';
 
-const statusConfig = {
-  pending:    { color: 'bg-amber-100 text-amber-700', label: 'Pending', step: 1 },
-  confirmed:  { color: 'bg-blue-100 text-blue-700', label: 'Confirmed', step: 2 },
-  dispatched: { color: 'bg-purple-100 text-purple-700', label: 'Dispatched', step: 3 },
-  delivered:  { color: 'bg-emerald-100 text-emerald-700', label: 'Delivered', step: 4 },
-  cancelled:  { color: 'bg-red-100 text-red-600', label: 'Cancelled', step: 0 },
-};
+const steps = ['pending', 'confirmed', 'dispatched', 'delivered'];
+const stepLabels = { pending: 'Order Placed', confirmed: 'Confirmed', dispatched: 'On the Way', delivered: 'Delivered' };
+const stepIcons = { pending: '📋', confirmed: '✅', dispatched: '🚚', delivered: '🎉' };
 
 function formatDate(val) {
   if (!val) return '';
@@ -18,6 +14,7 @@ function formatDate(val) {
 }
 
 export default function CustomerOrders() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [expanded, setExpanded] = useState(null);
 
@@ -26,63 +23,89 @@ export default function CustomerOrders() {
   }, []);
 
   return (
-    <CustomerLayout>
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">My Orders</h1>
-        <p className="text-sm text-gray-500">{orders.length} orders</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white sticky top-0 z-50 shadow-sm">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
+          <button onClick={() => navigate('/customer')} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+            <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <h1 className="font-bold text-gray-900 text-lg">My Orders</h1>
+        </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
         {orders.map((o) => {
-          const status = statusConfig[o.status] || statusConfig.pending;
+          const isCancelled = o.status === 'cancelled';
+          const currentStep = isCancelled ? -1 : steps.indexOf(o.status);
+          const isExpanded = expanded === o.id;
+
           return (
-            <div key={o.id} className="card hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => setExpanded(expanded === o.id ? null : o.id)}>
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="font-semibold text-gray-900">₹{o.totalValue?.toFixed(2)}</p>
-                  <p className="text-xs text-gray-400">{formatDate(o.createdAt)}</p>
+            <div key={o.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              {/* Order header */}
+              <div className="px-4 pt-4 pb-3 cursor-pointer" onClick={() => setExpanded(isExpanded ? null : o.id)}>
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-bold text-gray-900 text-sm">Order #{o.id.slice(-6).toUpperCase()}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{formatDate(o.createdAt)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-gray-900">₹{o.totalValue?.toFixed(0)}</p>
+                    {isCancelled ? (
+                      <span className="text-xs font-semibold text-red-500">Cancelled</span>
+                    ) : (
+                      <span className="text-xs font-semibold text-[#0C831F]">{stepLabels[o.status] || o.status}</span>
+                    )}
+                  </div>
                 </div>
-                <span className={`badge ${status.color}`}>{status.label}</span>
-              </div>
 
-              {/* Progress bar */}
-              {o.status !== 'cancelled' && (
-                <div className="flex gap-1 mb-2">
-                  {[1, 2, 3, 4].map((step) => (
-                    <div key={step} className={`h-1.5 flex-1 rounded-full ${step <= status.step ? 'bg-emerald-500' : 'bg-gray-200'}`} />
-                  ))}
-                </div>
-              )}
-
-              {expanded === o.id && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Items</p>
-                  <div className="space-y-1.5">
-                    {o.items?.map((item, i) => (
-                      <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-800">{item.productName}</p>
-                          <p className="text-xs text-gray-400">Qty: {item.quantity} × ₹{item.unitPrice}</p>
+                {/* Progress bar */}
+                {!isCancelled && (
+                  <div className="flex items-center gap-1 mt-3">
+                    {steps.map((step, i) => (
+                      <div key={step} className="flex items-center flex-1">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${i <= currentStep ? 'bg-[#0C831F] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                          {i <= currentStep ? '✓' : i + 1}
                         </div>
-                        <p className="text-sm font-bold text-gray-700">₹{(item.quantity * item.unitPrice).toFixed(2)}</p>
+                        {i < steps.length - 1 && (
+                          <div className={`flex-1 h-0.5 mx-1 ${i < currentStep ? 'bg-[#0C831F]' : 'bg-gray-200'}`} />
+                        )}
                       </div>
                     ))}
                   </div>
-                  {o.note && <p className="text-xs text-gray-500 mt-2 italic">Note: {o.note}</p>}
+                )}
+              </div>
+
+              {/* Expanded items */}
+              {isExpanded && (
+                <div className="border-t border-gray-50 px-4 py-3">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Items</p>
+                  <div className="space-y-2">
+                    {o.items?.map((item, i) => (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span className="text-gray-700">{item.productName} × {item.quantity}</span>
+                        <span className="font-semibold">₹{(item.quantity * item.unitPrice).toFixed(0)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {o.note && <p className="text-xs text-gray-400 mt-2 italic">Note: {o.note}</p>}
                 </div>
               )}
             </div>
           );
         })}
+
         {orders.length === 0 && (
-          <div className="text-center py-16">
-            <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-            <p className="text-gray-500 font-medium">No orders yet</p>
-            <p className="text-sm text-gray-400">Place your first order to see it here</p>
+          <div className="text-center py-20">
+            <p className="text-5xl mb-3">📦</p>
+            <p className="font-bold text-gray-700 text-lg">No orders yet</p>
+            <p className="text-sm text-gray-400 mt-1">Your orders will appear here</p>
+            <button onClick={() => navigate('/customer')} className="mt-4 bg-[#0C831F] text-white font-bold px-6 py-3 rounded-2xl text-sm">
+              Start Shopping
+            </button>
           </div>
         )}
       </div>
-    </CustomerLayout>
+    </div>
   );
 }
