@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/customerCartStore';
@@ -14,6 +14,9 @@ export default function CustomerDashboard() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotif, setShowNotif] = useState(false);
+  const notifRef = useRef(null);
 
   useEffect(() => {
     Promise.all([
@@ -25,6 +28,25 @@ export default function CustomerDashboard() {
       setProducts(prods.data.products);
       setBalance(pay.data.balance || 0);
     }).finally(() => setLoading(false));
+
+    // Fetch order notifications
+    api.get('/customer/orders').then(({ data }) => {
+      const recent = (data.orders || []).slice(0, 5).map((o) => ({
+        id: o.id,
+        title: o.status === 'delivered' ? 'Order Delivered!' : o.status === 'dispatched' ? 'Order On The Way' : o.status === 'confirmed' ? 'Order Confirmed' : 'Order Placed',
+        body: `₹${o.totalValue?.toFixed(0)} · ${o.items?.length || 0} items`,
+        status: o.status,
+        time: o.updatedAt || o.createdAt,
+      }));
+      setNotifications(recent);
+    }).catch(() => {});
+  }, []);
+
+  // Close notifications on outside click
+  useEffect(() => {
+    const handler = (e) => { if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const cartCount = getCartCount();
@@ -38,7 +60,7 @@ export default function CustomerDashboard() {
     <div className="min-h-screen bg-[#F8FAFC] pb-32" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Premium Header */}
       <div className="relative">
-        <div className="absolute inset-0 h-52" style={{ background: 'linear-gradient(135deg, #6C63FF 0%, #8B5CF6 50%, #A78BFA 100%)', borderRadius: '0 0 32px 32px' }} />
+        <div className="absolute inset-0 h-52" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 50%, #60A5FA 100%)', borderRadius: '0 0 32px 32px' }} />
         <div className="relative max-w-2xl mx-auto px-5 pt-5 pb-8">
           {/* Top row */}
           <div className="flex items-center justify-between mb-5">
@@ -60,9 +82,45 @@ export default function CustomerDashboard() {
                   <p className="text-[10px] font-bold text-white">₹{balance.toFixed(0)} due</p>
                 </div>
               )}
-              <button onClick={() => navigate('/customer/orders')} className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/10 active:scale-95 transition-transform">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-              </button>
+              <div className="relative" ref={notifRef}>
+                <button onClick={() => setShowNotif(!showNotif)} className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/10 active:scale-95 transition-transform relative">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                  {notifications.length > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-[#FF7A00] rounded-full border-2 border-[#2563EB]" />}
+                </button>
+                {showNotif && (
+                  <div className="absolute top-12 right-0 w-72 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-100 z-[9999] overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                      <p className="font-bold text-sm text-[#111827]">Order Updates</p>
+                      <button onClick={() => navigate('/customer/orders')} className="text-xs text-[#2563EB] font-semibold">View All</button>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="py-8 text-center">
+                          <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                          <p className="text-xs text-gray-400">No updates yet</p>
+                        </div>
+                      ) : notifications.map((n) => (
+                        <button key={n.id} onClick={() => { setShowNotif(false); navigate('/customer/orders'); }}
+                          className="w-full flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 text-left transition-colors">
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${n.status === 'delivered' ? 'bg-green-100' : n.status === 'dispatched' ? 'bg-blue-100' : n.status === 'confirmed' ? 'bg-purple-100' : 'bg-orange-100'}`}>
+                            {n.status === 'delivered' ? (
+                              <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                            ) : n.status === 'dispatched' ? (
+                              <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            ) : (
+                              <svg className="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-[#111827]">{n.title}</p>
+                            <p className="text-[11px] text-[#6B7280] mt-0.5">{n.body}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               <button onClick={() => navigate('/customer/profile')} className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/10 text-white text-sm font-bold active:scale-95 transition-transform">
                 {user?.name?.[0]?.toUpperCase() || 'C'}
               </button>
@@ -91,8 +149,8 @@ export default function CustomerDashboard() {
               <button key={cat} onClick={() => setActiveCategory(cat)}
                 className={`flex-shrink-0 px-5 py-2.5 rounded-full text-xs font-semibold transition-all duration-200 active:scale-95 ${
                   activeCategory === cat
-                    ? 'bg-gradient-to-r from-[#6C63FF] to-[#8B5CF6] text-white shadow-md shadow-purple-200'
-                    : 'bg-white text-[#6B7280] border border-gray-200 hover:border-[#6C63FF] hover:text-[#6C63FF]'
+                    ? 'bg-gradient-to-r from-[#2563EB] to-[#3B82F6] text-white shadow-md shadow-blue-200'
+                    : 'bg-white text-[#6B7280] border border-gray-200 hover:border-[#2563EB] hover:text-[#2563EB]'
                 }`}>
                 {cat === 'all' ? 'All Products' : cat.charAt(0).toUpperCase() + cat.slice(1)}
               </button>
@@ -186,7 +244,7 @@ export default function CustomerDashboard() {
         <div className="fixed bottom-5 left-5 right-5 z-50">
           <button onClick={() => navigate('/customer/order')}
             className="w-full max-w-2xl mx-auto flex items-center justify-between rounded-2xl px-5 py-4 border border-white/20 active:scale-[0.97] transition-all duration-200"
-            style={{ background: 'linear-gradient(135deg, #6C63FF, #8B5CF6)', boxShadow: '0 12px 40px rgba(108, 99, 255, 0.35)' }}>
+            style={{ background: 'linear-gradient(135deg, #2563EB, #3B82F6)', boxShadow: '0 12px 40px rgba(37, 99, 235, 0.35)' }}>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
                 <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
