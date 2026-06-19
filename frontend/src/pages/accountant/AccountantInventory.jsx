@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react';
 import AccountantLayout from '../../layouts/AccountantLayout';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
+import { uploadImages } from '../../utils/uploadImages';
 
 export default function AccountantInventory() {
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [form, setForm] = useState({ name: '', price: '', unit: 'piece', stock: '' });
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -22,14 +26,19 @@ export default function AccountantInventory() {
     e.preventDefault();
     setLoading(true);
     try {
+      let images = [];
+      if (imageFiles.length > 0) {
+        images = await uploadImages(imageFiles, 'products');
+      }
       await api.post('/products', {
         name: form.name,
         price: Number(form.price),
         unit: form.unit,
         stock: form.stock ? Number(form.stock) : null,
+        images,
       });
       toast.success('Product added');
-      setForm({ name: '', price: '', unit: 'piece', stock: '' });
+      resetForm();
       setShowForm(false);
       load();
     } catch (err) {
@@ -43,21 +52,44 @@ export default function AccountantInventory() {
     e.preventDefault();
     setLoading(true);
     try {
+      let images = [...existingImages];
+      if (imageFiles.length > 0) {
+        const newUrls = await uploadImages(imageFiles, 'products');
+        images = [...images, ...newUrls].slice(0, 5);
+      }
       await api.patch(`/products/${editingProduct.id}`, {
         name: form.name,
         price: Number(form.price),
         unit: form.unit,
         stock: form.stock ? Number(form.stock) : null,
+        images,
       });
       toast.success('Product updated');
+      resetForm();
       setEditingProduct(null);
-      setForm({ name: '', price: '', unit: 'piece', stock: '' });
       load();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setForm({ name: '', price: '', unit: 'piece', stock: '' });
+    setImageFiles([]);
+    setImagePreviews([]);
+    setExistingImages([]);
+  };
+
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files).slice(0, 5);
+    setImageFiles(files);
+    setImagePreviews(files.map((f) => URL.createObjectURL(f)));
+  };
+
+  const removeExistingImage = (idx) => {
+    setExistingImages((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleDelete = async (id) => {
@@ -74,12 +106,15 @@ export default function AccountantInventory() {
   const startEdit = (p) => {
     setEditingProduct(p);
     setForm({ name: p.name, price: String(p.price), unit: p.unit || 'piece', stock: p.stock != null ? String(p.stock) : '' });
+    setExistingImages(p.images || []);
+    setImageFiles([]);
+    setImagePreviews([]);
     setShowForm(false);
   };
 
   const cancelEdit = () => {
     setEditingProduct(null);
-    setForm({ name: '', price: '', unit: 'piece', stock: '' });
+    resetForm();
   };
 
   return (
@@ -139,6 +174,35 @@ export default function AccountantInventory() {
                 Cancel
               </button>
             </div>
+
+            {/* Image upload */}
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <label className="text-xs text-gray-500 mb-2 block font-semibold">Product Photos (max 5)</label>
+              {/* Existing images */}
+              {existingImages.length > 0 && (
+                <div className="flex gap-2 mb-2 flex-wrap">
+                  {existingImages.map((url, i) => (
+                    <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-200">
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => removeExistingImage(i)}
+                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px]">×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* New image previews */}
+              {imagePreviews.length > 0 && (
+                <div className="flex gap-2 mb-2 flex-wrap">
+                  {imagePreviews.map((url, i) => (
+                    <div key={i} className="w-16 h-16 rounded-xl overflow-hidden border-2 border-blue-300">
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input type="file" accept="image/*" multiple onChange={handleImageSelect}
+                className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-600 file:font-semibold file:text-xs hover:file:bg-blue-100" />
+            </div>
           </form>
         </div>
       )}
@@ -147,15 +211,23 @@ export default function AccountantInventory() {
       <div className="space-y-2">
         {filtered.map((p) => (
           <div key={p.id} className="card flex items-center justify-between py-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="font-semibold text-gray-900 text-sm">{p.name}</p>
-                {!p.isActive && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">Inactive</span>}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              {p.images?.length > 0 ? (
+                <img src={p.images[0]} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-gray-100" />
+              ) : (
+                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 text-xl">📦</div>
+              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-gray-900 text-sm">{p.name}</p>
+                  {!p.isActive && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">Inactive</span>}
+                </div>
+                <p className="text-xs text-gray-400">
+                  ₹{p.price} / {p.unit}
+                  {p.stock != null && <span className="ml-2">· Stock: {p.stock}</span>}
+                  {p.images?.length > 0 && <span className="ml-2">· {p.images.length} photo{p.images.length > 1 ? 's' : ''}</span>}
+                </p>
               </div>
-              <p className="text-xs text-gray-400">
-                ₹{p.price} / {p.unit}
-                {p.stock != null && <span className="ml-2">· Stock: {p.stock}</span>}
-              </p>
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <button onClick={() => startEdit(p)} className="text-xs px-2.5 py-1.5 rounded-lg font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">

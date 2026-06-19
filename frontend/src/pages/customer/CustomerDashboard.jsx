@@ -115,7 +115,11 @@ export default function CustomerDashboard() {
             return (
               <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                 <div className="bg-gray-50 h-28 flex items-center justify-center">
-                  <span className="text-4xl">📦</span>
+                  {p.images?.length > 0 ? (
+                    <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover rounded-t-xl" />
+                  ) : (
+                    <span className="text-4xl">📦</span>
+                  )}
                 </div>
                 <div className="p-3">
                   <p className="text-[10px] text-gray-400 font-medium uppercase">{p.unit}</p>

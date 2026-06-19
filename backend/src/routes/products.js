@@ -48,6 +48,7 @@ router.post('/', requireRole('owner', 'accountant'), async (req, res) => {
       price: Number(price),
       unit: sanitizeString(unit || 'piece'),
       stock: typeof stock === 'number' ? stock : null,
+      images: Array.isArray(req.body.images) ? req.body.images.slice(0, 5) : [],
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -78,6 +79,7 @@ router.patch('/:id', requireRole('owner', 'accountant'), async (req, res) => {
     if (isNonEmptyString(unit)) update.unit = sanitizeString(unit);
     if (typeof stock === 'number') update.stock = stock;
     if (typeof isActive === 'boolean') update.isActive = isActive;
+    if (Array.isArray(req.body.images)) update.images = req.body.images.slice(0, 5);
 
     await doc.ref.update(update);
     res.json({ message: 'Product updated' });
