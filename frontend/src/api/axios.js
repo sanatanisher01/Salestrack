@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL + '/api',
-  timeout: 30000,
+  timeout: 60000,
 });
 
 api.interceptors.request.use((config) => {
@@ -14,10 +14,15 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
+  async (err) => {
+    const config = err.config;
+    // Retry once on timeout (Render cold start)
+    if (err.code === 'ECONNABORTED' && !config._retry) {
+      config._retry = true;
+      return api(config);
+    }
     if (err.response?.status === 401) {
-      // Don't auto-logout for these endpoints (they may legitimately fail for customers)
-      const url = err.config?.url || '';
+      const url = config?.url || '';
       if (url.includes('/customer/me') || url.includes('/auth/firebase-token') || url.includes('/auth/me')) {
         return Promise.reject(err);
       }

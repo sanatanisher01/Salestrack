@@ -10,9 +10,12 @@ export default defineConfig({
           vendor: ['react', 'react-dom', 'react-router-dom'],
           maps: ['leaflet', 'react-leaflet'],
           firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          ui: ['react-hot-toast', 'zustand', 'date-fns'],
         },
       },
     },
+    target: 'esnext',
+    minify: 'esbuild',
   },
   server: {
     proxy: {
