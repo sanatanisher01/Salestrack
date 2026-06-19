@@ -18,12 +18,10 @@ export default function CustomerPlaceOrder() {
 
   useEffect(() => {
     if (!address) {
-      // Check saved addresses first
       const saved = localStorage.getItem('jdm-saved-addresses');
       if (saved) {
         try { const addrs = JSON.parse(saved); if (addrs.length > 0) { setAddress(addrs[0]); return; } } catch {}
       }
-      // Fallback to shop location
       api.get('/customer/me').then(({ data }) => {
         if (data.shopLocation) setAddress(data.shopLocation);
       }).catch(() => {});
@@ -32,17 +30,79 @@ export default function CustomerPlaceOrder() {
 
   const handleOrder = async () => {
     if (cartItems.length === 0) { toast.error('Cart is empty'); return; }
-    if (!address) { toast.error('Please confirm delivery address'); return; }
+    if (!address) { toast.error('Please add delivery address'); return; }
+
+    if (paymentMethod === 'online') {
+      // Razorpay flow
+      await handleRazorpayPayment();
+    } else {
+      // COD / Pay Later flow
+      await placeOrder();
+    }
+  };
+
+  const placeOrder = async (paymentId = null) => {
     setLoading(true);
     try {
       const items = cartItems.map((i) => ({ productName: i.name, quantity: i.qty, unitPrice: i.price }));
-      await api.post('/customer/orders', { items, deliveryAddress: address, note, paymentMethod });
+      await api.post('/customer/orders', {
+        items, deliveryAddress: address, note, paymentMethod,
+        ...(paymentId && { razorpayPaymentId: paymentId }),
+      });
       toast.success('Order placed successfully!');
       clearCart();
       navigate('/customer/orders');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to place order');
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRazorpayPayment = async () => {
+    setLoading(true);
+    try {
+      // Create order on backend
+      const { data } = await api.post('/razorpay/create-order', { amount: total });
+
+      const options = {
+        key: data.key,
+        amount: data.amount,
+        currency: data.currency,
+        order_id: data.id,
+        name: 'JDM - Jai Durga Maa',
+        description: `Order payment - ${cartItems.length} items`,
+        handler: async (response) => {
+          // Verify payment
+          try {
+            await api.post('/razorpay/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              amount: total,
+            });
+            // Place the order after successful payment
+            await placeOrder(response.razorpay_payment_id);
+          } catch {
+            toast.error('Payment verification failed. Contact support.');
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: address?.flat || '',
+          contact: '',
+        },
+        theme: { color: '#6C63FF' },
+        modal: {
+          ondismiss: () => { setLoading(false); toast.error('Payment cancelled'); },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', () => { setLoading(false); toast.error('Payment failed. Try again.'); });
+      rzp.open();
+    } catch (err) {
+      toast.error('Could not initiate payment');
       setLoading(false);
     }
   };
@@ -131,9 +191,9 @@ export default function CustomerPlaceOrder() {
               <p className="font-bold text-sm text-gray-900 mb-3">Payment Method</p>
               <div className="space-y-2">
                 {[
+                  { id: 'online', label: 'Pay Online', desc: 'UPI, Cards, Net Banking, Wallets', icon: '💳' },
                   { id: 'cod', label: 'Cash on Delivery', desc: 'Pay when you receive', icon: '💵' },
                   { id: 'pay_later', label: 'Pay Later', desc: 'Added to your account balance', icon: '📒' },
-                  { id: 'upi', label: 'UPI', desc: 'GPay, PhonePe, Paytm', icon: '📱' },
                 ].map((method) => (
                   <button key={method.id} onClick={() => setPaymentMethod(method.id)}
                     className={`w-full flex items-center gap-3 p-3.5 rounded-xl text-left transition-all ${paymentMethod === method.id ? 'bg-[#6C63FF]/5 border-2 border-[#6C63FF]' : 'bg-gray-50 border-2 border-transparent'}`}>
@@ -148,9 +208,9 @@ export default function CustomerPlaceOrder() {
                   </button>
                 ))}
               </div>
-              {paymentMethod === 'upi' && (
-                <div className="mt-3 bg-yellow-50 rounded-xl p-3 border border-yellow-200">
-                  <p className="text-xs text-yellow-800">💡 UPI payment link will be sent after order confirmation by the seller.</p>
+              {paymentMethod === 'online' && (
+                <div className="mt-3 bg-purple-50 rounded-xl p-3 border border-purple-200">
+                  <p className="text-xs text-purple-800">💳 Secure payment via Razorpay — UPI, Cards, Net Banking, Wallets supported.</p>
                 </div>
               )}
             </div>
