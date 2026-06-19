@@ -60,38 +60,38 @@ export default function CustomerDashboard() {
     <div className="min-h-screen bg-[#F8FAFC] pb-32" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Premium Header */}
       <div className="relative">
-        <div className="absolute inset-0 h-52" style={{ background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 50%, #60A5FA 100%)', borderRadius: '0 0 32px 32px' }} />
+        <div className="absolute inset-0 h-52 bg-[#0F172A]" style={{ borderRadius: '0 0 28px 28px' }} />
         <div className="relative max-w-2xl mx-auto px-5 pt-5 pb-8">
           {/* Top row */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/10">
+              <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10">
                 <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
                   <p className="text-white text-base font-bold">{customer?.shopName || 'Your Shop'}</p>
-                  <svg className="w-4 h-4 text-green-300" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
-                <p className="text-white/60 text-xs mt-0.5">{customer?.shopLocation?.address?.split(',').slice(0, 2).join(',') || 'Set your delivery location'}</p>
+                <p className="text-white/50 text-xs mt-0.5">{customer?.shopLocation?.address?.split(',').slice(0, 2).join(',') || 'Set your delivery location'}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {balance > 0 && (
-                <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/10">
-                  <p className="text-[10px] font-bold text-white">₹{balance.toFixed(0)} due</p>
+                <div className="bg-red-500/20 rounded-full px-3 py-1.5 border border-red-500/30">
+                  <p className="text-[10px] font-bold text-red-400">₹{balance.toFixed(0)} due</p>
                 </div>
               )}
               <div className="relative" ref={notifRef}>
-                <button onClick={() => setShowNotif(!showNotif)} className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/10 active:scale-95 transition-transform relative">
+                <button onClick={() => setShowNotif(!showNotif)} className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 active:scale-95 transition-transform relative">
                   <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                  {notifications.length > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-[#FF7A00] rounded-full border-2 border-[#2563EB]" />}
+                  {notifications.length > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-[#FF7A00] rounded-full border-2 border-[#0F172A]" />}
                 </button>
                 {showNotif && (
                   <div className="absolute top-12 right-0 w-72 bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-100 z-[9999] overflow-hidden">
                     <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                       <p className="font-bold text-sm text-[#111827]">Order Updates</p>
-                      <button onClick={() => navigate('/customer/orders')} className="text-xs text-[#2563EB] font-semibold">View All</button>
+                      <button onClick={() => navigate('/customer/orders')} className="text-xs text-[#0F172A] font-semibold">View All</button>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                       {notifications.length === 0 ? (
@@ -121,7 +121,7 @@ export default function CustomerDashboard() {
                   </div>
                 )}
               </div>
-              <button onClick={() => navigate('/customer/profile')} className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/10 text-white text-sm font-bold active:scale-95 transition-transform">
+              <button onClick={() => navigate('/customer/profile')} className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10 text-white text-sm font-bold active:scale-95 transition-transform">
                 {user?.name?.[0]?.toUpperCase() || 'C'}
               </button>
             </div>
@@ -149,8 +149,8 @@ export default function CustomerDashboard() {
               <button key={cat} onClick={() => setActiveCategory(cat)}
                 className={`flex-shrink-0 px-5 py-2.5 rounded-full text-xs font-semibold transition-all duration-200 active:scale-95 ${
                   activeCategory === cat
-                    ? 'bg-gradient-to-r from-[#2563EB] to-[#3B82F6] text-white shadow-md shadow-blue-200'
-                    : 'bg-white text-[#6B7280] border border-gray-200 hover:border-[#2563EB] hover:text-[#2563EB]'
+                    ? 'bg-[#0F172A] text-white shadow-md'
+                    : 'bg-white text-[#6B7280] border border-gray-200 hover:border-[#0F172A] hover:text-[#0F172A]'
                 }`}>
                 {cat === 'all' ? 'All Products' : cat.charAt(0).toUpperCase() + cat.slice(1)}
               </button>
@@ -243,8 +243,8 @@ export default function CustomerDashboard() {
       {cartCount > 0 && (
         <div className="fixed bottom-5 left-5 right-5 z-50">
           <button onClick={() => navigate('/customer/order')}
-            className="w-full max-w-2xl mx-auto flex items-center justify-between rounded-2xl px-5 py-4 border border-white/20 active:scale-[0.97] transition-all duration-200"
-            style={{ background: 'linear-gradient(135deg, #2563EB, #3B82F6)', boxShadow: '0 12px 40px rgba(37, 99, 235, 0.35)' }}>
+            className="w-full max-w-2xl mx-auto flex items-center justify-between rounded-2xl px-5 py-4 bg-[#0F172A] border border-white/5 active:scale-[0.97] transition-all duration-200"
+            style={{ boxShadow: '0 12px 40px rgba(15, 23, 42, 0.4)' }}>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
                 <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
