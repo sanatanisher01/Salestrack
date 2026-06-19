@@ -146,10 +146,15 @@ router.patch('/location', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Valid location required' });
     }
     const db = getDb();
-    await db.collection('customers').doc(req.user.uid).update({
-      shopLocation: { lat: Number(lat), lng: Number(lng), address: sanitizeString(address || '') },
-      updatedAt: new Date(),
-    });
+    const docRef = db.collection('customers').doc(req.user.uid);
+    const doc = await docRef.get();
+    const locationData = { lat: Number(lat), lng: Number(lng), address: (address || '').slice(0, 1000) };
+
+    if (doc.exists) {
+      await docRef.update({ shopLocation: locationData, updatedAt: new Date() });
+    } else {
+      await docRef.set({ shopLocation: locationData, updatedAt: new Date() }, { merge: true });
+    }
     res.json({ message: 'Location updated' });
   } catch (err) {
     console.error('Update location error:', err);
