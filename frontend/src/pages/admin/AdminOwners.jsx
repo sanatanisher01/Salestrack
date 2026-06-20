@@ -45,34 +45,34 @@ export default function AdminOwners() {
     <AdminLayout>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold">Owners</h1>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary">+ Add Owner</button>
+        <button onClick={() => setShowForm(!showForm)} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform">+ Add Owner</button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="card mb-6 space-y-3">
+        <form onSubmit={handleCreate} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6 space-y-3">
           <h2 className="font-semibold">New Owner</h2>
-          <input className="input" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-          <input className="input" type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-          <input className="input" type="password" placeholder="Password (min 8 chars)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
+          <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+          <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" type="password" placeholder="Password (min 8 chars)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
           <div className="flex gap-2">
-            <button type="submit" disabled={loading} className="btn-primary">{loading ? 'Creating...' : 'Create'}</button>
-            <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
+            <button type="submit" disabled={loading} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform">{loading ? 'Creating...' : 'Create'}</button>
+            <button type="button" onClick={() => setShowForm(false)} className="bg-gray-100 text-[#111827] font-semibold rounded-xl">Cancel</button>
           </div>
         </form>
       )}
 
       <div className="space-y-3">
         {owners.map((o) => (
-          <div key={o.uid} className="card flex items-center justify-between">
+          <div key={o.uid} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between">
             <div>
               <p className="font-medium">{o.name}</p>
-              <p className="text-sm text-gray-500">{o.email}</p>
+              <p className="text-sm text-[#6B7280]">{o.email}</p>
             </div>
             <div className="flex items-center gap-2">
               <span className={`badge ${o.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                 {o.isActive ? 'Active' : 'Inactive'}
               </span>
-              <button onClick={() => toggle(o.uid, o.isActive)} className={o.isActive ? 'btn-danger text-sm px-3 py-1' : 'btn-success text-sm px-3 py-1'}>
+              <button onClick={() => toggle(o.uid, o.isActive)} className={o.isActive ? 'bg-red-600 text-white font-bold rounded-xl text-sm px-3 py-1' : 'bg-emerald-600 text-white font-bold rounded-xl text-sm px-3 py-1'}>
                 {o.isActive ? 'Deactivate' : 'Activate'}
               </button>
             </div>

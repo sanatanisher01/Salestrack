@@ -83,23 +83,23 @@ export default function CustomerRegister() {
         <form onSubmit={handleSubmit} className="card shadow-float p-5 space-y-4">
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Shop Name *</label>
-            <input className="input" placeholder="Your shop name" value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} required />
+            <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Your shop name" value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} required />
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Owner Name *</label>
-            <input className="input" placeholder="Shop owner's name" value={form.ownerName} onChange={(e) => setForm({ ...form, ownerName: e.target.value })} required />
+            <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Shop owner's name" value={form.ownerName} onChange={(e) => setForm({ ...form, ownerName: e.target.value })} required />
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Mobile Number *</label>
-            <input className="input" type="tel" placeholder="9876543210" value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} required />
+            <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" type="tel" placeholder="9876543210" value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} required />
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">GSTIN (optional)</label>
-            <input className="input" placeholder="22AAAAA0000A1Z5" value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value })} />
+            <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="22AAAAA0000A1Z5" value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value })} />
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Shop Category (optional)</label>
-            <select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+            <select className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
               <option value="">Select category</option>
               <option value="grocery">Grocery</option>
               <option value="medical">Medical</option>
@@ -112,7 +112,7 @@ export default function CustomerRegister() {
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Owner/Supplier Code (optional)</label>
-            <input className="input" placeholder="Enter code given by your supplier" value={form.ownerCode} onChange={(e) => setForm({ ...form, ownerCode: e.target.value })} />
+            <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Enter code given by your supplier" value={form.ownerCode} onChange={(e) => setForm({ ...form, ownerCode: e.target.value })} />
             <p className="text-xs text-gray-400 mt-1">You can add this later too</p>
           </div>
 

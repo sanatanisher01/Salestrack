@@ -98,12 +98,12 @@ export default function OwnerHistory() {
   return (
     <OwnerLayout>
       <div className="mb-5">
-        <h1 className="text-2xl font-bold text-gray-900">History</h1>
-        <p className="text-sm text-gray-500">Duty sessions and stop events — view past trails anytime</p>
+        <h1 className="text-2xl font-black text-[#111827]">History</h1>
+        <p className="text-sm text-[#6B7280]">Duty sessions and stop events — view past trails anytime</p>
       </div>
 
-      <div className="card mb-4">
-        <select className="input" value={filter} onChange={(e) => setFilter(e.target.value)}>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
+        <select className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="">All Salesmen</option>
           {team.map((m) => <option key={m.uid} value={m.uid}>{m.name}</option>)}
         </select>
@@ -124,7 +124,7 @@ export default function OwnerHistory() {
       {tab === 'sessions' && (
         <div className="space-y-3">
           {filtered.map((s) => (
-            <div key={s.id} className="card">
+            <div key={s.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">
@@ -163,7 +163,7 @@ export default function OwnerHistory() {
       {tab === 'stops' && (
         <div className="space-y-3">
           {stopEvents.map((e) => (
-            <div key={e.id} className="card border-l-4 border-orange-400">
+            <div key={e.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 border-l-4 border-orange-400">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-xs font-bold">
                   {e.salesmanName?.[0]?.toUpperCase()}

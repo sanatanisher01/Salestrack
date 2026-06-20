@@ -86,33 +86,33 @@ export default function OwnerInventory() {
     <OwnerLayout>
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
-          <p className="text-sm text-gray-500">{products.length} products</p>
+          <h1 className="text-2xl font-black text-[#111827]">Inventory</h1>
+          <p className="text-sm text-[#6B7280]">{products.length} products</p>
         </div>
-        <button onClick={() => { setShowForm(true); cancelEdit(); }} className="btn-primary gap-1">
+        <button onClick={() => { setShowForm(true); cancelEdit(); }} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform gap-1">
           <span className="text-lg leading-none">+</span> Add Product
         </button>
       </div>
 
       {/* Search */}
       <div className="mb-4">
-        <input className="input" placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
       {/* Add/Edit Form */}
       {(showForm || editingProduct) && (
-        <div className="card mb-4 border border-indigo-100">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 border border-indigo-100">
           <h2 className="font-semibold text-gray-800 mb-3">{editingProduct ? 'Edit Product' : 'New Product'}</h2>
           <form onSubmit={editingProduct ? handleUpdate : handleCreate} className="space-y-3">
-            <input className="input" placeholder="Product Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Product Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="text-xs text-gray-500 mb-1 block">Price (₹)</label>
-                <input className="input" type="number" min="0" step="0.01" placeholder="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
+                <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" type="number" min="0" step="0.01" placeholder="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
               </div>
               <div className="flex-1">
                 <label className="text-xs text-gray-500 mb-1 block">Unit</label>
-                <select className="input" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}>
+                <select className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}>
                   <option value="piece">Piece</option>
                   <option value="kg">Kg</option>
                   <option value="liter">Liter</option>
@@ -123,14 +123,14 @@ export default function OwnerInventory() {
               </div>
               <div className="flex-1">
                 <label className="text-xs text-gray-500 mb-1 block">Stock</label>
-                <input className="input" type="number" min="0" placeholder="—" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+                <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" type="number" min="0" placeholder="—" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
               </div>
             </div>
             <div className="flex gap-2">
-              <button type="submit" disabled={loading} className="btn-primary">
+              <button type="submit" disabled={loading} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform">
                 {loading ? 'Saving...' : editingProduct ? 'Update' : 'Add Product'}
               </button>
-              <button type="button" onClick={() => { setShowForm(false); cancelEdit(); }} className="btn-secondary">Cancel</button>
+              <button type="button" onClick={() => { setShowForm(false); cancelEdit(); }} className="bg-gray-100 text-[#111827] font-semibold rounded-xl">Cancel</button>
             </div>
           </form>
         </div>
@@ -139,11 +139,11 @@ export default function OwnerInventory() {
       {/* Products list */}
       <div className="space-y-2">
         {filtered.map((p) => (
-          <div key={p.id} className="card flex items-center justify-between py-3">
+          <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between py-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <p className="font-semibold text-gray-900 text-sm">{p.name}</p>
-                {!p.isActive && <span className="badge text-xs bg-red-100 text-red-600">Inactive</span>}
+                {!p.isActive && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-600">Inactive</span>}
               </div>
               <p className="text-xs text-gray-400">
                 ₹{p.price} / {p.unit}

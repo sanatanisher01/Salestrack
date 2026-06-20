@@ -86,10 +86,10 @@ export default function OwnerTeam() {
     <OwnerLayout>
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Team</h1>
-          <p className="text-sm text-gray-500">{team.length} members total</p>
+          <h1 className="text-2xl font-black text-[#111827]">Team</h1>
+          <p className="text-sm text-[#6B7280]">{team.length} members total</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary gap-1">
+        <button onClick={() => setShowForm(true)} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform gap-1">
           <span className="text-lg leading-none">+</span> Add Member
         </button>
       </div>
@@ -114,15 +114,15 @@ export default function OwnerTeam() {
               </button>
             </div>
             <form onSubmit={handleCreate} className="p-5 space-y-3">
-              <input className="input" placeholder="Full Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-              <input className="input" type="email" placeholder="Email *" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+              <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Full Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" type="email" placeholder="Email *" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
               {tab === 'salesman' && (
-                <input className="input" placeholder="Phone (optional)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Phone (optional)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               )}
-              <input className="input" type="password" placeholder="Password * (min 8 chars)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
+              <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" type="password" placeholder="Password * (min 8 chars)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={8} />
               <div className="flex gap-2 pt-1">
-                <button type="submit" disabled={loading} className="btn-primary flex-1">{loading ? 'Creating...' : 'Create'}</button>
-                <button type="button" onClick={() => setShowForm(false)} className="btn-secondary flex-1">Cancel</button>
+                <button type="submit" disabled={loading} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform flex-1">{loading ? 'Creating...' : 'Create'}</button>
+                <button type="button" onClick={() => setShowForm(false)} className="bg-gray-100 text-[#111827] font-semibold rounded-xl flex-1">Cancel</button>
               </div>
             </form>
           </div>
@@ -131,7 +131,7 @@ export default function OwnerTeam() {
 
       <div className="space-y-3">
         {filtered.map((m) => (
-          <div key={m.uid} className="card flex items-center gap-3">
+          <div key={m.uid} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm flex-shrink-0">
               {m.name[0]?.toUpperCase()}
             </div>
@@ -144,7 +144,7 @@ export default function OwnerTeam() {
                   </span>
                 )}
                 {isLocked(m) && (
-                  <span className="badge text-xs bg-orange-100 text-orange-700">Locked</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-700">Locked</span>
                 )}
               </div>
               <p className="text-xs text-gray-400 truncate">{m.email}</p>
@@ -200,10 +200,10 @@ export default function OwnerTeam() {
               </svg>
             </div>
             <h2 className="text-lg font-bold text-gray-900 text-center">Delete {confirmDelete.name}?</h2>
-            <p className="text-sm text-gray-500 text-center mt-1 mb-5">This action cannot be undone. All their data will be permanently removed.</p>
+            <p className="text-sm text-[#6B7280] text-center mt-1 mb-5">This action cannot be undone. All their data will be permanently removed.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(null)} className="btn-secondary flex-1">Cancel</button>
-              <button onClick={() => handleDelete(confirmDelete.uid)} className="btn-danger flex-1">Delete</button>
+              <button onClick={() => setConfirmDelete(null)} className="bg-gray-100 text-[#111827] font-semibold rounded-xl flex-1">Cancel</button>
+              <button onClick={() => handleDelete(confirmDelete.uid)} className="bg-red-600 text-white font-bold rounded-xl flex-1">Delete</button>
             </div>
           </div>
         </div>
@@ -213,9 +213,9 @@ export default function OwnerTeam() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl w-full max-w-sm shadow-xl p-6">
             <h2 className="text-lg font-bold text-gray-900 text-center mb-1">Reset Password</h2>
-            <p className="text-sm text-gray-500 text-center mb-4">Set new password for <strong>{resetPassModal.name}</strong></p>
+            <p className="text-sm text-[#6B7280] text-center mb-4">Set new password for <strong>{resetPassModal.name}</strong></p>
             <input
-              className="input mb-3"
+              className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors mb-3"
               type="password"
               placeholder="New password (min 8 chars)"
               value={newPassword}
@@ -223,8 +223,8 @@ export default function OwnerTeam() {
               minLength={8}
             />
             <div className="flex gap-3">
-              <button onClick={() => { setResetPassModal(null); setNewPassword(''); }} className="btn-secondary flex-1">Cancel</button>
-              <button onClick={handleResetPassword} className="btn-primary flex-1">Reset</button>
+              <button onClick={() => { setResetPassModal(null); setNewPassword(''); }} className="bg-gray-100 text-[#111827] font-semibold rounded-xl flex-1">Cancel</button>
+              <button onClick={handleResetPassword} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform flex-1">Reset</button>
             </div>
           </div>
         </div>

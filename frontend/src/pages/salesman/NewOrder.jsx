@@ -46,7 +46,7 @@ function ProductSearch({ products, value, onChange, onSelect }) {
   return (
     <div className="relative" ref={ref}>
       <input
-        className="input bg-white"
+        className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors bg-white"
         placeholder="Search or type product name *"
         value={search}
         onChange={(e) => { setSearch(e.target.value); onChange(e.target.value); setOpen(true); }}
@@ -130,22 +130,22 @@ export default function NewOrder() {
   return (
     <SalesmanLayout>
       <div className="mb-5">
-        <h1 className="text-2xl font-bold text-gray-900">New Order</h1>
-        <p className="text-sm text-gray-500">Fill in the details below</p>
+        <h1 className="text-2xl font-black text-[#111827]">New Order</h1>
+        <p className="text-sm text-[#6B7280]">Fill in the details below</p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Customer */}
-        <div className="card space-y-3">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
           <h2 className="font-semibold text-gray-700 flex items-center gap-2">
             <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             Customer
           </h2>
-          <input className="input" placeholder="Customer Name *" value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} required />
-          <input className="input" placeholder="Phone (optional)" value={form.customerPhone} onChange={(e) => setForm({ ...form, customerPhone: e.target.value })} />
+          <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Customer Name *" value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} required />
+          <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Phone (optional)" value={form.customerPhone} onChange={(e) => setForm({ ...form, customerPhone: e.target.value })} />
         </div>
 
         {/* Items */}
-        <div className="card space-y-3">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-gray-700 flex items-center gap-2">
               <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
@@ -173,11 +173,11 @@ export default function NewOrder() {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="text-xs text-gray-500 mb-1 block">Qty</label>
-                  <input className="input bg-white" type="number" min="1" value={item.quantity} onChange={(e) => updateItem(i, 'quantity', e.target.value)} required />
+                  <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors bg-white" type="number" min="1" value={item.quantity} onChange={(e) => updateItem(i, 'quantity', e.target.value)} required />
                 </div>
                 <div className="flex-1">
                   <label className="text-xs text-gray-500 mb-1 block">Unit Price (₹)</label>
-                  <input className="input bg-white" type="number" min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(i, 'unitPrice', e.target.value)} required />
+                  <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors bg-white" type="number" min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(i, 'unitPrice', e.target.value)} required />
                 </div>
               </div>
               <p className="text-xs text-right text-gray-500">Subtotal: <span className="font-semibold text-gray-700">₹{(item.quantity * item.unitPrice).toFixed(2)}</span></p>
@@ -190,15 +190,15 @@ export default function NewOrder() {
         </div>
 
         {/* Note */}
-        <div className="card">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <h2 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
             <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
             Note
           </h2>
-          <textarea className="input resize-none" placeholder="Optional note..." rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
+          <textarea className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors resize-none" placeholder="Optional note..." rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
         </div>
 
-        <button type="submit" disabled={loading || !!submittedId} className="btn-primary w-full py-3.5 text-base">
+        <button type="submit" disabled={loading || !!submittedId} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform w-full py-3.5 text-base">
           {loading ? 'Submitting...' : 'Submit Order'}
         </button>
       </form>

@@ -58,8 +58,8 @@ export default function OwnerLedger() {
   return (
     <OwnerLayout>
       <div className="mb-5">
-        <h1 className="text-2xl font-bold text-gray-900">Payment Ledger</h1>
-        <p className="text-sm text-gray-500">Track customer payments and balances</p>
+        <h1 className="text-2xl font-black text-[#111827]">Payment Ledger</h1>
+        <p className="text-sm text-[#6B7280]">Track customer payments and balances</p>
       </div>
 
       {/* Summary */}
@@ -141,7 +141,7 @@ export default function OwnerLedger() {
             {/* Record payment button */}
             <div className="px-5 pt-4 flex-shrink-0">
               <button onClick={() => setShowPayForm(!showPayForm)}
-                className="btn-primary w-full py-2.5 bg-emerald-600 hover:bg-emerald-700">
+                className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform w-full py-2.5 bg-emerald-600 hover:bg-emerald-700">
                 + Record Payment
               </button>
             </div>
@@ -150,16 +150,16 @@ export default function OwnerLedger() {
             {showPayForm && (
               <form onSubmit={recordPayment} className="px-5 pt-3 space-y-2 flex-shrink-0">
                 <div className="flex gap-2">
-                  <input className="input flex-1" type="number" min="1" placeholder="Amount (₹)" value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} required />
-                  <select className="input w-28" value={payForm.method} onChange={(e) => setPayForm({ ...payForm, method: e.target.value })}>
+                  <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors flex-1" type="number" min="1" placeholder="Amount (₹)" value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} required />
+                  <select className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors w-28" value={payForm.method} onChange={(e) => setPayForm({ ...payForm, method: e.target.value })}>
                     <option value="cash">Cash</option>
                     <option value="upi">UPI</option>
                     <option value="bank">Bank</option>
                     <option value="cheque">Cheque</option>
                   </select>
                 </div>
-                <input className="input" placeholder="Note (optional)" value={payForm.note} onChange={(e) => setPayForm({ ...payForm, note: e.target.value })} />
-                <button type="submit" disabled={paying} className="btn-primary w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-sm">
+                <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Note (optional)" value={payForm.note} onChange={(e) => setPayForm({ ...payForm, note: e.target.value })} />
+                <button type="submit" disabled={paying} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-sm">
                   {paying ? 'Saving...' : 'Save Payment'}
                 </button>
               </form>
@@ -179,7 +179,7 @@ export default function OwnerLedger() {
                         <p className="text-[10px] text-gray-400">{p.method} · {formatDate(p.createdAt)}</p>
                         {p.note && <p className="text-[10px] text-gray-500 italic">{p.note}</p>}
                       </div>
-                      <span className="badge text-xs bg-emerald-100 text-emerald-700">Paid</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700">Paid</span>
                     </div>
                   ))}
                 </div>

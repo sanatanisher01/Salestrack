@@ -89,7 +89,7 @@ export default function OwnerProfile() {
       <div className="space-y-3">
         {/* Install App */}
         {isInstalled ? (
-          <div className="card flex items-center gap-3 border border-emerald-100 bg-emerald-50/50">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 border border-emerald-100 bg-emerald-50/50">
             <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
               <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
@@ -100,7 +100,7 @@ export default function OwnerProfile() {
           </div>
         ) : (
           <button onClick={canInstall ? install : () => setShowIOS(true)}
-            className="card w-full flex items-center gap-3 hover:bg-indigo-50 transition-colors border border-indigo-100">
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 w-full flex items-center gap-3 hover:bg-indigo-50 transition-colors border border-indigo-100">
             <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center">
               <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
             </div>
@@ -112,7 +112,7 @@ export default function OwnerProfile() {
         )}
 
         {/* Supplier Code */}
-        <div className="card">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
               <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
@@ -144,8 +144,8 @@ export default function OwnerProfile() {
                 </button>
               </div>
               <div className="flex gap-2">
-                <input className="input flex-1" placeholder="e.g. ARYAN2024" value={codeInput} onChange={(e) => setCodeInput(e.target.value.toUpperCase())} maxLength={20} />
-                <button onClick={saveCustomerCode} disabled={savingCode} className="btn-primary px-4 text-sm">
+                <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors flex-1" placeholder="e.g. ARYAN2024" value={codeInput} onChange={(e) => setCodeInput(e.target.value.toUpperCase())} maxLength={20} />
+                <button onClick={saveCustomerCode} disabled={savingCode} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform px-4 text-sm">
                   {savingCode ? '...' : 'Set'}
                 </button>
               </div>
@@ -154,7 +154,7 @@ export default function OwnerProfile() {
         </div>
 
         {/* Change password */}
-        <div className="card">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <button onClick={() => setChanging(!changing)} className="w-full flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
@@ -170,15 +170,15 @@ export default function OwnerProfile() {
           </button>
           {changing && (
             <form onSubmit={handleChangePassword} className="mt-4 space-y-3 pt-4 border-t border-gray-50">
-              <input className="input" type="password" placeholder="Current password" value={form.currentPassword} onChange={(e) => setForm({ ...form, currentPassword: e.target.value })} required />
-              <input className="input" type="password" placeholder="New password (min 8 chars)" value={form.newPassword} onChange={(e) => setForm({ ...form, newPassword: e.target.value })} required minLength={8} />
-              <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? 'Saving...' : 'Update Password'}</button>
+              <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" type="password" placeholder="Current password" value={form.currentPassword} onChange={(e) => setForm({ ...form, currentPassword: e.target.value })} required />
+              <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" type="password" placeholder="New password (min 8 chars)" value={form.newPassword} onChange={(e) => setForm({ ...form, newPassword: e.target.value })} required minLength={8} />
+              <button type="submit" disabled={loading} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform w-full">{loading ? 'Saving...' : 'Update Password'}</button>
             </form>
           )}
         </div>
 
         {/* Logout */}
-        <button onClick={handleLogout} className="card w-full flex items-center gap-3 hover:bg-rose-50 transition-colors border border-rose-100">
+        <button onClick={handleLogout} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 w-full flex items-center gap-3 hover:bg-rose-50 transition-colors border border-rose-100">
           <div className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center">
             <svg className="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

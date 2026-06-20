@@ -47,8 +47,8 @@ export default function OwnerCustomers() {
     <OwnerLayout>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-          <p className="text-sm text-gray-500">{customers.length} registered · {withLocation.length} mapped</p>
+          <h1 className="text-2xl font-black text-[#111827]">Customers</h1>
+          <p className="text-sm text-[#6B7280]">{customers.length} registered · {withLocation.length} mapped</p>
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
           <button onClick={() => setView('map')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${view === 'map' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'}`}>Map</button>
@@ -80,7 +80,7 @@ export default function OwnerCustomers() {
 
       {/* Selected customer card (below map) */}
       {view === 'map' && selected && (
-        <div className="card mt-3 border border-emerald-100">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mt-3 border border-emerald-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold">
@@ -108,7 +108,7 @@ export default function OwnerCustomers() {
       {view === 'list' && (
         <div className="space-y-2">
           {customers.map((c) => (
-            <div key={c.uid} className="card flex items-center gap-3">
+            <div key={c.uid} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm flex-shrink-0">
                 {c.shopName?.[0]?.toUpperCase()}
               </div>
@@ -120,9 +120,9 @@ export default function OwnerCustomers() {
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
                 {c.gstin && <span className="text-[10px] text-gray-400">{c.gstin}</span>}
                 {c.shopLocation ? (
-                  <span className="badge text-xs bg-emerald-100 text-emerald-700">📍 Mapped</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700">📍 Mapped</span>
                 ) : (
-                  <span className="badge text-xs bg-gray-100 text-gray-500">No location</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500">No location</span>
                 )}
               </div>
             </div>

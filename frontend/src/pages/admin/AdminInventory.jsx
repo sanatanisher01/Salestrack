@@ -24,24 +24,24 @@ export default function AdminInventory() {
   return (
     <AdminLayout>
       <div className="mb-5">
-        <h1 className="text-2xl font-bold text-gray-900">Inventory (All Owners)</h1>
-        <p className="text-sm text-gray-500">View products for any owner</p>
+        <h1 className="text-2xl font-black text-[#111827]">Inventory (All Owners)</h1>
+        <p className="text-sm text-[#6B7280]">View products for any owner</p>
       </div>
 
-      <div className="card mb-4 space-y-3">
-        <select className="input" value={selectedOwner} onChange={(e) => setSelectedOwner(e.target.value)}>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 space-y-3">
+        <select className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" value={selectedOwner} onChange={(e) => setSelectedOwner(e.target.value)}>
           <option value="">Select an Owner</option>
           {owners.map((o) => <option key={o.uid} value={o.uid}>{o.name} ({o.email})</option>)}
         </select>
         {selectedOwner && (
-          <input className="input" placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
         )}
       </div>
 
       {selectedOwner && (
         <div className="space-y-2">
           {filtered.map((p) => (
-            <div key={p.id} className="card flex items-center justify-between py-3">
+            <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between py-3">
               <div>
                 <p className="font-semibold text-gray-900 text-sm">{p.name}</p>
                 <p className="text-xs text-gray-400">₹{p.price} / {p.unit}{p.stock != null ? ` · Stock: ${p.stock}` : ''}</p>

@@ -122,7 +122,7 @@ export default function AccountantInventory() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Inventory</h1>
-          <p className="text-sm text-gray-500">{products.length} products</p>
+          <p className="text-sm text-[#6B7280]">{products.length} products</p>
         </div>
         <button onClick={() => { setShowForm(true); cancelEdit(); }} className="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors">
           + Add Product
@@ -132,7 +132,7 @@ export default function AccountantInventory() {
       {/* Search */}
       <div className="mb-4">
         <input
-          className="input"
+          className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors"
           placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -141,18 +141,18 @@ export default function AccountantInventory() {
 
       {/* Add/Edit Form */}
       {(showForm || editingProduct) && (
-        <div className="card mb-4 border border-blue-100">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 border border-blue-100">
           <h2 className="font-semibold text-gray-800 mb-3">{editingProduct ? 'Edit Product' : 'New Product'}</h2>
           <form onSubmit={editingProduct ? handleUpdate : handleCreate} className="space-y-3">
-            <input className="input" placeholder="Product Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" placeholder="Product Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="text-xs text-gray-500 mb-1 block">Price (₹)</label>
-                <input className="input" type="number" min="0" step="0.01" placeholder="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
+                <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" type="number" min="0" step="0.01" placeholder="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
               </div>
               <div className="flex-1">
                 <label className="text-xs text-gray-500 mb-1 block">Unit</label>
-                <select className="input" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}>
+                <select className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}>
                   <option value="piece">Piece</option>
                   <option value="kg">Kg</option>
                   <option value="liter">Liter</option>
@@ -163,14 +163,14 @@ export default function AccountantInventory() {
               </div>
               <div className="flex-1">
                 <label className="text-xs text-gray-500 mb-1 block">Stock (optional)</label>
-                <input className="input" type="number" min="0" placeholder="—" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+                <input className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors" type="number" min="0" placeholder="—" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
               </div>
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={loading} className="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-blue-700 disabled:opacity-50">
                 {loading ? 'Saving...' : editingProduct ? 'Update' : 'Add Product'}
               </button>
-              <button type="button" onClick={() => { setShowForm(false); cancelEdit(); }} className="text-sm text-gray-500 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50">
+              <button type="button" onClick={() => { setShowForm(false); cancelEdit(); }} className="text-sm text-[#6B7280] px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50">
                 Cancel
               </button>
             </div>
@@ -201,7 +201,7 @@ export default function AccountantInventory() {
                 </div>
               )}
               <input type="file" accept="image/*" multiple onChange={handleImageSelect}
-                className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-600 file:font-semibold file:text-xs hover:file:bg-blue-100" />
+                className="text-sm text-[#6B7280] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-600 file:font-semibold file:text-xs hover:file:bg-blue-100" />
             </div>
           </form>
         </div>
@@ -210,7 +210,7 @@ export default function AccountantInventory() {
       {/* Products list */}
       <div className="space-y-2">
         {filtered.map((p) => (
-          <div key={p.id} className="card flex items-center justify-between py-3">
+          <div key={p.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between py-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               {p.images?.length > 0 ? (
                 <img src={p.images[0]} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-gray-100" />

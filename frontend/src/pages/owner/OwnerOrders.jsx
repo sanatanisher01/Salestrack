@@ -92,10 +92,10 @@ export default function OwnerOrders() {
     <OwnerLayout>
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-          <p className="text-sm text-gray-500">{orders.length} orders found</p>
+          <h1 className="text-2xl font-black text-[#111827]">Orders</h1>
+          <p className="text-sm text-[#6B7280]">{orders.length} orders found</p>
         </div>
-        <button onClick={exportCSV} className="btn-secondary text-sm gap-1">
+        <button onClick={exportCSV} className="bg-gray-100 text-[#111827] font-semibold rounded-xl text-sm gap-1">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
           Export
         </button>
@@ -114,16 +114,16 @@ export default function OwnerOrders() {
       </div>
 
       {/* Filters */}
-      <div className="card mb-4 flex gap-3 flex-wrap">
-        <select className="input flex-1 min-w-[120px]" value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })}>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 flex gap-3 flex-wrap">
+        <select className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors flex-1 min-w-[120px]" value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })}>
           <option value="">All Statuses</option>
           {Object.entries(statusConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <select className="input flex-1 min-w-[120px]" value={filter.salesmanId} onChange={(e) => setFilter({ ...filter, salesmanId: e.target.value })}>
+        <select className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors flex-1 min-w-[120px]" value={filter.salesmanId} onChange={(e) => setFilter({ ...filter, salesmanId: e.target.value })}>
           <option value="">All Salesmen</option>
           {team.map((m) => <option key={m.uid} value={m.uid}>{m.name}</option>)}
         </select>
-        <select className="input flex-1 min-w-[120px]" value={filter.source} onChange={(e) => setFilter({ ...filter, source: e.target.value })}>
+        <select className="w-full bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none border border-gray-200 focus:border-[#0F172A] transition-colors flex-1 min-w-[120px]" value={filter.source} onChange={(e) => setFilter({ ...filter, source: e.target.value })}>
           <option value="">All Sources</option>
           <option value="salesman">Salesman Orders</option>
           <option value="customer">Customer Orders</option>
@@ -132,7 +132,7 @@ export default function OwnerOrders() {
 
       <div className="space-y-3">
         {orders.map((o) => (
-          <div key={o.id} className="card hover:shadow-md transition-shadow cursor-pointer"
+          <div key={o.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer"
             onClick={() => setExpanded(expanded === o.id ? null : o.id)}>
             {/* Order header */}
             <div className="flex items-start justify-between mb-2">
@@ -154,18 +154,18 @@ export default function OwnerOrders() {
               <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                 {o.status === 'pending' && (
                   <>
-                    <button onClick={() => updateStatus(o.id, 'confirmed', o.source)} className="btn-primary text-xs px-3 py-1.5">Confirm</button>
-                    <button onClick={() => updateStatus(o.id, 'cancelled', o.source)} className="btn-danger text-xs px-3 py-1.5">Cancel</button>
+                    <button onClick={() => updateStatus(o.id, 'confirmed', o.source)} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform text-xs px-3 py-1.5">Confirm</button>
+                    <button onClick={() => updateStatus(o.id, 'cancelled', o.source)} className="bg-red-600 text-white font-bold rounded-xl text-xs px-3 py-1.5">Cancel</button>
                   </>
                 )}
                 {o.status === 'confirmed' && (
                   <>
-                    {o.source === 'customer' && <button onClick={() => updateStatus(o.id, 'dispatched', o.source)} className="btn-primary text-xs px-3 py-1.5">Dispatch</button>}
-                    <button onClick={() => updateStatus(o.id, 'delivered', o.source)} className="btn-success text-xs px-3 py-1.5">Delivered</button>
+                    {o.source === 'customer' && <button onClick={() => updateStatus(o.id, 'dispatched', o.source)} className="bg-[#0F172A] text-white font-bold rounded-xl active:scale-95 transition-transform text-xs px-3 py-1.5">Dispatch</button>}
+                    <button onClick={() => updateStatus(o.id, 'delivered', o.source)} className="bg-emerald-600 text-white font-bold rounded-xl text-xs px-3 py-1.5">Delivered</button>
                   </>
                 )}
                 {o.status === 'dispatched' && (
-                  <button onClick={() => updateStatus(o.id, 'delivered', o.source)} className="btn-success text-xs px-3 py-1.5">Delivered</button>
+                  <button onClick={() => updateStatus(o.id, 'delivered', o.source)} className="bg-emerald-600 text-white font-bold rounded-xl text-xs px-3 py-1.5">Delivered</button>
                 )}
               </div>
             </div>

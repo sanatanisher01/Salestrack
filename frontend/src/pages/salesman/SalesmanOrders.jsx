@@ -31,8 +31,8 @@ export default function SalesmanOrders() {
   return (
     <SalesmanLayout>
       <div className="mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">My Orders</h1>
-        <p className="text-sm text-gray-500">{orders.length} orders total</p>
+        <h1 className="text-2xl font-black text-[#111827]">My Orders</h1>
+        <p className="text-sm text-[#6B7280]">{orders.length} orders total</p>
       </div>
 
       {/* Filter tabs */}
@@ -48,7 +48,7 @@ export default function SalesmanOrders() {
 
       <div className="space-y-3">
         {filtered.map((o) => (
-          <div key={o.id} className="card hover:shadow-md transition-shadow cursor-pointer"
+          <div key={o.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer"
             onClick={() => setExpanded(expanded === o.id ? null : o.id)}>
             <div className="flex items-start justify-between mb-1">
               <div>
