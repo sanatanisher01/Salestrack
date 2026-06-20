@@ -17,43 +17,26 @@ export default function CustomerLogin() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
-
       const { data } = await api.post('/customer/auth/google', { idToken });
       setToken(data.token, { uid: data.customer.uid, name: data.customer.shopName || data.customer.name || result.user.displayName, email: data.customer.email || result.user.email, role: 'customer' });
-
-      if (data.isNew) {
-        navigate('/customer/register');
-      } else {
-        navigate('/customer');
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
+      if (data.isNew) { navigate('/customer/register'); } else { navigate('/customer'); }
+    } catch (err) { toast.error(err.response?.data?.error || 'Login failed'); }
+    finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa] flex items-center justify-center p-4">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-emerald-100 rounded-full blur-3xl opacity-60" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-teal-100 rounded-full blur-3xl opacity-60" />
-      </div>
-
-      <div className="relative w-full max-w-sm">
+    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <img src="/jdm-logo.png" alt="JDM" className="w-16 h-16 object-contain mx-auto mb-4 rounded-2xl shadow-lg" />
-          <h1 className="text-2xl font-bold text-gray-900">JDM</h1>
-          <p className="text-sm text-gray-500 mt-1">Customer Portal</p>
+          <h1 className="text-2xl font-black text-[#111827]">JDM</h1>
+          <p className="text-sm text-[#6B7280] mt-1">Customer Portal</p>
         </div>
 
-        <div className="card shadow-float p-6">
-          <p className="text-center text-sm text-gray-600 mb-5">Sign in to place orders and track deliveries</p>
-          <button
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 hover:border-gray-300 rounded-2xl py-3.5 px-4 font-semibold text-gray-700 transition-all hover:shadow-md active:scale-[0.98] disabled:opacity-60"
-          >
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <p className="text-center text-sm text-[#6B7280] mb-5">Sign in to place orders and track deliveries</p>
+          <button onClick={handleGoogleLogin} disabled={loading}
+            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 hover:border-[#0F172A] rounded-xl py-3.5 px-4 font-semibold text-[#111827] text-sm transition-all active:scale-[0.97] disabled:opacity-60">
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -64,8 +47,8 @@ export default function CustomerLogin() {
           </button>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-4">
-          For staff login, <a href="/" className="text-indigo-600 font-semibold">click here</a>
+        <p className="text-center text-[11px] text-[#6B7280] mt-4">
+          Staff? <a href="/" className="text-[#0F172A] font-semibold">Login here</a>
         </p>
       </div>
     </div>
